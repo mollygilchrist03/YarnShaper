@@ -1,11 +1,42 @@
-﻿@page "/"
+@page "/"
 
 <PageTitle>Yarn Shaper</PageTitle>
 
-<h1>Yarn Shaping &amp; Colorway Visualizer</h1>
+<div class="hero">
+    <span class="eyebrow">Garment shaping calculator</span>
+    <h1>Turn gauge and measurements into a knitting schedule you can actually see.</h1>
+    <p>
+        Yarn Shaper computes garment shaping — raglan sweater increases, and
+        more constructions to come — from your gauge and finished
+        measurements, then renders the resulting stitch and row geometry
+        live as an SVG schematic. No generic mockup: the diagram is drawn
+        directly from the same numbers a knitter would follow.
+    </p>
+    <div class="actions">
+        <a class="btn-primary" href="raglan">Try the raglan calculator</a>
+        <a class="btn-link" href="https://github.com/mollygilchrist03/YarnShaper" target="_blank">View source</a>
+    </div>
+</div>
 
-<p>
-    Compute garment shaping from body measurements and gauge, then preview
-    the resulting stitch/row geometry live as an SVG schematic with a
-    colorway layer on top.
-</p>
+<div class="feature-grid">
+    <div class="card feature-card">
+        <span class="badge badge-ready">Available now</span>
+        <h3>Raglan yoke shaping</h3>
+        <p>Back, front, and both sleeves, shaped round by round from neck cast-on to underarm.</p>
+    </div>
+    <div class="card feature-card">
+        <span class="badge badge-soon">Coming soon</span>
+        <h3>Sock heel turns</h3>
+        <p>Heel turn and gusset pickup math, rendered with the same schematic renderer.</p>
+    </div>
+    <div class="card feature-card">
+        <span class="badge badge-soon">Coming soon</span>
+        <h3>Granny square rounds</h3>
+        <p>Round-by-round geometry — a natural fit for the colorway layer below.</p>
+    </div>
+    <div class="card feature-card">
+        <span class="badge badge-soon">Coming soon</span>
+        <h3>Colorway preview</h3>
+        <p>Map a stripe or color sequence onto the real construction, not a generic mockup.</p>
+    </div>
+</div>

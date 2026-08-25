@@ -12,28 +12,30 @@
         {
             <figcaption>@Label</figcaption>
         }
-        <svg viewBox="0 0 @svgWidth.ToString(CultureInfo.InvariantCulture) @svgHeight.ToString(CultureInfo.InvariantCulture)"
-             width="@svgWidth.ToString(CultureInfo.InvariantCulture)"
-             height="@svgHeight.ToString(CultureInfo.InvariantCulture)"
-             role="img"
-             aria-label="@(Label ?? "Shaping schematic")">
-            @for (var i = 0; i < ordered.Count; i++)
-            {
-                var row = ordered[i];
-                var bandWidth = row.StitchCount * StitchWidthPx;
-                var x = (svgWidth - bandWidth) / 2.0;
-                var y = RowOneAtTop ? i * RowHeightPx : svgHeight - (i + 1) * RowHeightPx;
-                var fill = ColorSelector?.Invoke(row) ?? DefaultFill;
+        <div class="schematic-svg-wrap">
+            <svg viewBox="0 0 @svgWidth.ToString(CultureInfo.InvariantCulture) @svgHeight.ToString(CultureInfo.InvariantCulture)"
+                 style="width: @(svgWidth.ToString(CultureInfo.InvariantCulture))px; max-width: 100%; height: auto;"
+                 role="img"
+                 aria-label="@(Label ?? "Shaping schematic")">
+                @for (var i = 0; i < ordered.Count; i++)
+                {
+                    var row = ordered[i];
+                    var bandWidth = row.StitchCount * StitchWidthPx;
+                    var x = (svgWidth - bandWidth) / 2.0;
+                    var y = RowOneAtTop ? i * RowHeightPx : svgHeight - (i + 1) * RowHeightPx;
+                    var fill = ColorSelector?.Invoke(row) ?? DefaultFill;
 
-                <rect x="@x.ToString(CultureInfo.InvariantCulture)"
-                      y="@y.ToString(CultureInfo.InvariantCulture)"
-                      width="@bandWidth.ToString(CultureInfo.InvariantCulture)"
-                      height="@RowHeightPx.ToString(CultureInfo.InvariantCulture)"
-                      fill="@fill">
-                    <title>Row @row.RowNumber: @row.StitchCount sts (@row.Action)</title>
-                </rect>
-            }
-        </svg>
+                    <rect x="@x.ToString(CultureInfo.InvariantCulture)"
+                          y="@y.ToString(CultureInfo.InvariantCulture)"
+                          width="@bandWidth.ToString(CultureInfo.InvariantCulture)"
+                          height="@RowHeightPx.ToString(CultureInfo.InvariantCulture)"
+                          fill="@fill">
+                        <title>Row @row.RowNumber: @row.StitchCount sts (@row.Action)</title>
+                    </rect>
+                }
+            </svg>
+        </div>
+        <p class="schematic-caption">@ordered[0].StitchCount &rarr; @ordered[^1].StitchCount sts &middot; @ordered.Count rows</p>
     </figure>
 }
 
@@ -56,7 +58,7 @@
     public double RowHeightPx { get; set; } = 4;
 
     [Parameter]
-    public string DefaultFill { get; set; } = "#8fa998";
+    public string DefaultFill { get; set; } = "#7c9c82";
 
     /// <summary>
     /// True draws row 1 at the top, growing downward (top-down raglan: neck
