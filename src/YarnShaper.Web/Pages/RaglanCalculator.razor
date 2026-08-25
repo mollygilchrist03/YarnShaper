@@ -45,6 +45,11 @@
             </div>
         </div>
 
+        <div class="field-group">
+            <h2>Colorway</h2>
+            <ColorwayPicker @bind-Value="Colorway" @bind-Value:after="RecomputeRowColors" />
+        </div>
+
         <button type="submit" class="btn-primary">Calculate</button>
     </EditForm>
 
@@ -72,10 +77,10 @@
             </div>
 
             <div class="schematic-row">
-                <SchematicRenderer Label="Back" Rows="@SectionRows[GarmentSection.Back]" />
-                <SchematicRenderer Label="Front" Rows="@SectionRows[GarmentSection.Front]" />
-                <SchematicRenderer Label="Left sleeve" Rows="@SectionRows[GarmentSection.LeftSleeve]" />
-                <SchematicRenderer Label="Right sleeve" Rows="@SectionRows[GarmentSection.RightSleeve]" />
+                <SchematicRenderer Label="Back" Rows="@SectionRows[GarmentSection.Back]" ColorSelector="ColorForRow" />
+                <SchematicRenderer Label="Front" Rows="@SectionRows[GarmentSection.Front]" ColorSelector="ColorForRow" />
+                <SchematicRenderer Label="Left sleeve" Rows="@SectionRows[GarmentSection.LeftSleeve]" ColorSelector="ColorForRow" />
+                <SchematicRenderer Label="Right sleeve" Rows="@SectionRows[GarmentSection.RightSleeve]" ColorSelector="ColorForRow" />
             </div>
         }
     </div>
@@ -88,6 +93,11 @@
     private int CastOnStitches;
     private int TotalYokeRows;
     private int FinalUnderarmStitches;
+
+    private StripeSequence Colorway { get; set; } =
+        new([new Stripe("#7c9c82", 4), new Stripe("#c98a3e", 2)]);
+
+    private IReadOnlyDictionary<int, string>? RowColors;
 
     protected override void OnInitialized() => Calculate();
 
@@ -111,13 +121,24 @@
             CastOnStitches = SectionRows.Values.Sum(s => s[0].StitchCount);
             TotalYokeRows = SectionRows[GarmentSection.Back].Max(r => r.RowNumber);
             FinalUnderarmStitches = SectionRows.Values.Sum(s => s[^1].StitchCount);
+            RecomputeRowColors();
         }
         catch (ArgumentException ex)
         {
             ErrorMessage = ex.Message;
             SectionRows = null;
+            RowColors = null;
         }
     }
+
+    private void RecomputeRowColors()
+    {
+        if (SectionRows is null) return;
+        RowColors = ColorwayMapper.MapRowColors(TotalYokeRows, Colorway);
+    }
+
+    private string ColorForRow(ShapingRow row) =>
+        RowColors?.GetValueOrDefault(row.RowNumber) ?? "#7c9c82";
 
     private sealed class RaglanInput
     {

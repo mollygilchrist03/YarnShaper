@@ -295,6 +295,74 @@ input[type="number"], input[type="text"] {
     margin-top: 1.5rem;
 }
 
+/* Colorway picker */
+
+.colorway-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.stripe-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+    .stripe-row input[type="color"] {
+        width: 2.2rem;
+        height: 2.2rem;
+        padding: 0.2rem;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+
+    .stripe-row input[type="number"] {
+        width: 4rem;
+        flex-shrink: 0;
+    }
+
+.stripe-row-suffix {
+    font-size: 0.85rem;
+    color: var(--color-ink-soft);
+}
+
+.remove-stripe {
+    margin-left: auto;
+    width: 1.6rem;
+    height: 1.6rem;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-cream-deep);
+    color: var(--color-ink-soft);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+    .remove-stripe:hover:not(:disabled) {
+        background: var(--color-error-tint);
+        color: var(--color-error);
+    }
+
+    .remove-stripe:disabled {
+        opacity: 0.4;
+        cursor: default;
+    }
+
+.add-stripe {
+    align-self: flex-start;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+.colorway-repeat {
+    font-size: 0.8rem;
+    color: var(--color-ink-soft);
+    margin: 0.4rem 0 0;
+}
+
 .error-banner {
     display: flex;
     gap: 0.6rem;

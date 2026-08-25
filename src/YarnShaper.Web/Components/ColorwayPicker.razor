@@ -1,0 +1,55 @@
+@namespace YarnShaper.Web.Components
+
+<div class="colorway-picker">
+    @for (var i = 0; i < Value.Stripes.Count; i++)
+    {
+        var index = i;
+        var stripe = Value.Stripes[index];
+        <div class="stripe-row">
+            <input type="color" value="@stripe.Color" @onchange="e => UpdateColor(index, e)" aria-label="Stripe @(index + 1) color" />
+            <input type="number" min="1" value="@stripe.RowCount" @onchange="e => UpdateRowCount(index, e)" aria-label="Stripe @(index + 1) row count" />
+            <span class="stripe-row-suffix">rows</span>
+            <button type="button" class="remove-stripe" @onclick="() => RemoveStripe(index)" disabled="@(Value.Stripes.Count <= 1)" aria-label="Remove stripe @(index + 1)">&times;</button>
+        </div>
+    }
+    <button type="button" class="btn-link add-stripe" @onclick="AddStripe">+ Add stripe</button>
+    <p class="colorway-repeat">Repeats every @Value.TotalRows rows</p>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public StripeSequence Value { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<StripeSequence> ValueChanged { get; set; }
+
+    private Task AddStripe() =>
+        Commit([.. Value.Stripes, new Stripe("#7c9c82", 2)]);
+
+    private Task RemoveStripe(int index)
+    {
+        if (Value.Stripes.Count <= 1) return Task.CompletedTask;
+        return Commit(Value.Stripes.Where((_, i) => i != index).ToList());
+    }
+
+    private Task UpdateColor(int index, ChangeEventArgs e)
+    {
+        var color = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(color)) return Task.CompletedTask;
+
+        var next = Value.Stripes.ToList();
+        next[index] = new Stripe(color, next[index].RowCount);
+        return Commit(next);
+    }
+
+    private Task UpdateRowCount(int index, ChangeEventArgs e)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var rowCount) || rowCount < 1) return Task.CompletedTask;
+
+        var next = Value.Stripes.ToList();
+        next[index] = new Stripe(next[index].Color, rowCount);
+        return Commit(next);
+    }
+
+    private Task Commit(IReadOnlyList<Stripe> stripes) => ValueChanged.InvokeAsync(new StripeSequence(stripes));
+}
