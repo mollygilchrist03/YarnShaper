@@ -1,0 +1,68 @@
+@namespace YarnShaper.Web.Components
+
+@if (Rows.Count > 0)
+{
+    var maxStitchCount = Rows.Max(r => r.StitchCount);
+    var svgWidth = maxStitchCount * StitchWidthPx;
+    var svgHeight = Rows.Count * RowHeightPx;
+    var ordered = Rows.OrderBy(r => r.RowNumber).ToList();
+
+    <figure class="schematic">
+        @if (!string.IsNullOrWhiteSpace(Label))
+        {
+            <figcaption>@Label</figcaption>
+        }
+        <svg viewBox="0 0 @svgWidth.ToString(CultureInfo.InvariantCulture) @svgHeight.ToString(CultureInfo.InvariantCulture)"
+             width="@svgWidth.ToString(CultureInfo.InvariantCulture)"
+             height="@svgHeight.ToString(CultureInfo.InvariantCulture)"
+             role="img"
+             aria-label="@(Label ?? "Shaping schematic")">
+            @for (var i = 0; i < ordered.Count; i++)
+            {
+                var row = ordered[i];
+                var bandWidth = row.StitchCount * StitchWidthPx;
+                var x = (svgWidth - bandWidth) / 2.0;
+                var y = RowOneAtTop ? i * RowHeightPx : svgHeight - (i + 1) * RowHeightPx;
+                var fill = ColorSelector?.Invoke(row) ?? DefaultFill;
+
+                <rect x="@x.ToString(CultureInfo.InvariantCulture)"
+                      y="@y.ToString(CultureInfo.InvariantCulture)"
+                      width="@bandWidth.ToString(CultureInfo.InvariantCulture)"
+                      height="@RowHeightPx.ToString(CultureInfo.InvariantCulture)"
+                      fill="@fill">
+                    <title>Row @row.RowNumber: @row.StitchCount sts (@row.Action)</title>
+                </rect>
+            }
+        </svg>
+    </figure>
+}
+
+@code {
+    /// <summary>Ordered rows for a single garment section (e.g. Back, LeftSleeve).</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ShapingRow> Rows { get; set; } = [];
+
+    [Parameter]
+    public string? Label { get; set; }
+
+    /// <summary>Optional per-row color mapping (used by the colorway layer). Falls back to <see cref="DefaultFill"/>.</summary>
+    [Parameter]
+    public Func<ShapingRow, string>? ColorSelector { get; set; }
+
+    [Parameter]
+    public double StitchWidthPx { get; set; } = 6;
+
+    [Parameter]
+    public double RowHeightPx { get; set; } = 4;
+
+    [Parameter]
+    public string DefaultFill { get; set; } = "#8fa998";
+
+    /// <summary>
+    /// True draws row 1 at the top, growing downward (top-down raglan: neck
+    /// cast-on at top, underarm at bottom). False draws row 1 at the
+    /// bottom, growing upward (bottom-up pieces).
+    /// </summary>
+    [Parameter]
+    public bool RowOneAtTop { get; set; } = true;
+}

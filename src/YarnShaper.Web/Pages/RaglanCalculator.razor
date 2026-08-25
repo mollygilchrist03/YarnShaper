@@ -1,0 +1,95 @@
+@page "/raglan"
+
+<PageTitle>Raglan Calculator</PageTitle>
+
+<h1>Raglan Yoke Calculator</h1>
+
+<EditForm Model="@Input" OnValidSubmit="Calculate">
+    <DataAnnotationsValidator />
+
+    <div class="form-grid">
+        <label>
+            Stitches per inch
+            <InputNumber @bind-Value="Input.StitchesPerInch" step="0.1" />
+        </label>
+        <label>
+            Rows per inch
+            <InputNumber @bind-Value="Input.RowsPerInch" step="0.1" />
+        </label>
+        <label>
+            Neck circumference (in)
+            <InputNumber @bind-Value="Input.NeckCircumferenceInches" step="0.25" />
+        </label>
+        <label>
+            Bust circumference (in)
+            <InputNumber @bind-Value="Input.BustCircumferenceInches" step="0.25" />
+        </label>
+        <label>
+            Upper arm circumference (in)
+            <InputNumber @bind-Value="Input.UpperArmCircumferenceInches" step="0.25" />
+        </label>
+        <label>
+            Yoke depth (in)
+            <InputNumber @bind-Value="Input.YokeDepthInches" step="0.25" />
+        </label>
+    </div>
+
+    <button type="submit">Calculate</button>
+</EditForm>
+
+@if (ErrorMessage is not null)
+{
+    <p class="error">@ErrorMessage</p>
+}
+
+@if (SectionRows is not null)
+{
+    <div class="schematic-row">
+        <SchematicRenderer Label="Back" Rows="@SectionRows[GarmentSection.Back]" />
+        <SchematicRenderer Label="Front" Rows="@SectionRows[GarmentSection.Front]" />
+        <SchematicRenderer Label="Left sleeve" Rows="@SectionRows[GarmentSection.LeftSleeve]" />
+        <SchematicRenderer Label="Right sleeve" Rows="@SectionRows[GarmentSection.RightSleeve]" />
+    </div>
+}
+
+@code {
+    private RaglanInput Input { get; set; } = new();
+    private string? ErrorMessage;
+    private Dictionary<GarmentSection, List<ShapingRow>>? SectionRows;
+
+    protected override void OnInitialized() => Calculate();
+
+    private void Calculate()
+    {
+        ErrorMessage = null;
+        try
+        {
+            var gauge = new Gauge(Input.StitchesPerInch, Input.RowsPerInch);
+            var measurements = new RaglanMeasurements(
+                Input.NeckCircumferenceInches,
+                Input.BustCircumferenceInches,
+                Input.UpperArmCircumferenceInches,
+                Input.YokeDepthInches);
+
+            var rows = RaglanShapingCalculator.Calculate(gauge, measurements);
+            SectionRows = rows
+                .GroupBy(r => r.Section)
+                .ToDictionary(g => g.Key, g => g.OrderBy(r => r.RowNumber).ToList());
+        }
+        catch (ArgumentException ex)
+        {
+            ErrorMessage = ex.Message;
+            SectionRows = null;
+        }
+    }
+
+    private sealed class RaglanInput
+    {
+        public double StitchesPerInch { get; set; } = 5.5;
+        public double RowsPerInch { get; set; } = 7.5;
+        public double NeckCircumferenceInches { get; set; } = 20;
+        public double BustCircumferenceInches { get; set; } = 40;
+        public double UpperArmCircumferenceInches { get; set; } = 12;
+        public double YokeDepthInches { get; set; } = 8;
+    }
+}
