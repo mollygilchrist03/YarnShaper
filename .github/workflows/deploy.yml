@@ -37,6 +37,8 @@ jobs:
         run: sed -i 's|<base href="/" />|<base href="/${{ github.event.repository.name }}/" />|' publish/wwwroot/index.html
       - name: Disable Jekyll processing
         run: touch publish/wwwroot/.nojekyll
+      - name: Add SPA fallback for client-side routed pages
+        run: cp publish/wwwroot/index.html publish/wwwroot/404.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: publish/wwwroot
