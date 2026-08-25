@@ -1,0 +1,17 @@
+## .NET
+bin/
+obj/
+*.user
+
+## Blazor WASM build output
+wwwroot/_framework/
+publish/
+
+## IDE
+.vs/
+.vscode/
+*.suo
+
+## OS
+.DS_Store
+Thumbs.db

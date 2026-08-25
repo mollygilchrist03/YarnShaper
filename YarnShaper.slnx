@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/YarnShaper.Core/YarnShaper.Core.csproj" />
+    <Project Path="src/YarnShaper.Web/YarnShaper.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/YarnShaper.Core.Tests/YarnShaper.Core.Tests.csproj" />
+  </Folder>
+</Solution>
