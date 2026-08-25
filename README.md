@@ -19,6 +19,11 @@ for a top-down raglan yoke — back, front, and both sleeves — then draws
 each section as a schematic: cast-on at the neck, widening step by step
 toward the underarm, exactly matching the computed stitch counts.
 
+A colorway picker sits alongside it: build a stripe sequence (color + row
+count per stripe), and it's mapped onto the real row data — all four
+sections recolor in sync, since a raglan yoke is worked in the round and
+row N is the same physical round in every section.
+
 ## Notable engineering decisions
 
 - **The shaping math is the actual point, so it's isolated and tested on
@@ -42,12 +47,20 @@ toward the underarm, exactly matching the computed stitch counts.
   any correct schedule: monotonic stitch growth, exactly +2 stitches per
   increase round, convergence on the target circumference within rounding
   tolerance, and a hard failure when the yoke is too shallow for the
-  required shaping. 24 tests, all in `YarnShaper.Core.Tests`.
+  required shaping. 35 tests, all in `YarnShaper.Core.Tests`.
 - **SVG straight from Razor, no Canvas/JS interop.** `SchematicRenderer.razor`
   takes a section's row list and draws it directly as stacked, proportionally
   widening `<rect>` bands — the "hard-to-fake" part of a schematic (increases
   visibly widening the shape) falls out of the data instead of being drawn
   by hand.
+- **The colorway layer is keyed by absolute row number, not per-section
+  index.** It would be simpler to map each section's own row list
+  independently, but that's physically wrong for a raglan — back, front,
+  and both sleeves are worked in the same round simultaneously.
+  [`ColorwayMapper`](src/YarnShaper.Core/Colorways/ColorwayMapper.cs) maps
+  the stripe pattern once against the shared row count and hands the same
+  `RowNumber → color` map to every section, so a stripe boundary lines up
+  identically across all four schematics.
 - **CI gates the deploy on the test suite.** The GitHub Actions workflow
   runs `dotnet test` before it ever builds or publishes — a broken shaping
   calculation can't reach the live site.
@@ -82,9 +95,6 @@ Things planned but not yet built:
 
 - Sock heel turn + gusset calculator, reusing the same renderer
 - Granny square / round-based calculator (round-by-round color is the
-  classic use case for the colorway layer below)
-- Colorway layer: a stripe-sequence model mapped onto the actual row data,
-  so a color preview reflects the real construction instead of a generic
-  mockup
+  classic use case for the colorway layer)
 - Yardage estimator per colorway
 - Export the schematic as a downloadable SVG/PNG
