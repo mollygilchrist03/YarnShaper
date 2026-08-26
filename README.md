@@ -42,7 +42,8 @@ classic "different color each round" granny square look — which the same
 
 The raglan and sock heel pages also estimate yardage per color from the
 active colorway — how many yards of each stripe color the piece actually
-uses, not just how many rows it spans.
+uses, not just how many rows it spans. Every schematic can be downloaded
+as a standalone SVG file straight from the card it's rendered on.
 
 ## Notable engineering decisions
 
@@ -83,6 +84,15 @@ uses, not just how many rows it spans.
   widening `<rect>` bands — the "hard-to-fake" part of a schematic (increases
   visibly widening the shape) falls out of the data instead of being drawn
   by hand.
+- **Exporting a schematic doesn't need JS interop either.** The same row
+  layout that renders the on-screen `<svg>` is built once as a string,
+  base64-encoded into a `data:` URI, and set directly as an `<a download>`
+  element's `href` — the browser handles the actual file save. That also
+  guarantees the download can never drift from what's on screen, since
+  they're computed from the exact same data. It's why there's no PNG
+  export: rasterizing in the browser means `canvas.toBlob()`, which would
+  break the zero-Canvas, zero-JS-interop rendering story everywhere else
+  in this app just for one feature.
 - **The colorway layer is keyed by absolute row number, not per-section
   index.** It would be simpler to map each section's own row list
   independently, but that's physically wrong for a raglan — back, front,
@@ -141,6 +151,7 @@ dotnet run --project src/YarnShaper.Web
 
 ## What's next
 
-Things planned but not yet built:
-
-- Export the schematic as a downloadable SVG/PNG
+Every milestone from the original build plan is shipped. The one
+deliberate omission is PNG export — doing that in-browser needs either
+Canvas or JS interop, and this app avoids both everywhere else, so
+schematics stay SVG-only for now.
