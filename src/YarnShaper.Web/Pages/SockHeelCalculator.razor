@@ -1,0 +1,147 @@
+@page "/sock-heel"
+
+<PageTitle>Sock Heel Calculator</PageTitle>
+
+<h1>Sock Heel Calculator</h1>
+<p>Enter a gauge swatch and foot circumference to generate the flap, short-row turn, and gusset shaping for a standard sock heel.</p>
+
+<div class="calculator-layout">
+    <EditForm Model="@Input" OnValidSubmit="Calculate" class="card form-card">
+        <DataAnnotationsValidator />
+
+        <div class="field-group">
+            <h2>Gauge</h2>
+            <div class="form-grid">
+                <label>
+                    Stitches / inch
+                    <InputNumber @bind-Value="Input.StitchesPerInch" step="0.1" />
+                </label>
+                <label>
+                    Rows / inch
+                    <InputNumber @bind-Value="Input.RowsPerInch" step="0.1" />
+                </label>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <h2>Measurements (in)</h2>
+            <div class="form-grid">
+                <label>
+                    Foot circumference
+                    <InputNumber @bind-Value="Input.FootCircumferenceInches" step="0.25" />
+                </label>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <h2>Colorway</h2>
+            <ColorwayPicker @bind-Value="Colorway" @bind-Value:after="RecomputeRowColors" />
+        </div>
+
+        <button type="submit" class="btn-primary">Calculate</button>
+    </EditForm>
+
+    <div class="results">
+        @if (ErrorMessage is not null)
+        {
+            <div class="error-banner"><Icon Name="exclamation-triangle-fill" /> @ErrorMessage</div>
+        }
+
+        @if (SectionRows is not null)
+        {
+            <div class="summary-stats">
+                <div class="summary-stat">
+                    <span class="value">@HeelStitches</span>
+                    <span class="label">Heel stitches</span>
+                </div>
+                <div class="summary-stat">
+                    <span class="value">@TurnStitches</span>
+                    <span class="label">Stitches after turn</span>
+                </div>
+                <div class="summary-stat">
+                    <span class="value">@GussetPeakStitches</span>
+                    <span class="label">Gusset peak stitches</span>
+                </div>
+            </div>
+
+            <div class="schematic-row">
+                <SchematicRenderer Label="Heel flap" Rows="@SectionRows[GarmentSection.HeelFlap]" ColorSelector="@ColorSelectorFor(0)" />
+                <SchematicRenderer Label="Heel turn" Rows="@SectionRows[GarmentSection.HeelTurn]" ColorSelector="@ColorSelectorFor(FlapRowCount)" />
+                <SchematicRenderer Label="Gusset" Rows="@SectionRows[GarmentSection.Gusset]" ColorSelector="@ColorSelectorFor(FlapRowCount + TurnRowCount)" />
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private SockHeelInput Input { get; set; } = new();
+    private string? ErrorMessage;
+    private Dictionary<GarmentSection, List<ShapingRow>>? SectionRows;
+    private int HeelStitches;
+    private int TurnStitches;
+    private int GussetPeakStitches;
+    private int FlapRowCount;
+    private int TurnRowCount;
+    private int GussetRowCount;
+
+    private StripeSequence Colorway { get; set; } =
+        new([new Stripe("#7c9c82", 4), new Stripe("#c98a3e", 2)]);
+
+    private IReadOnlyDictionary<int, string>? RowColors;
+
+    protected override void OnInitialized() => Calculate();
+
+    private void Calculate()
+    {
+        ErrorMessage = null;
+        try
+        {
+            var gauge = new Gauge(Input.StitchesPerInch, Input.RowsPerInch);
+            var measurements = new SockHeelMeasurements(Input.FootCircumferenceInches);
+
+            var rows = SockHeelShapingCalculator.Calculate(gauge, measurements);
+            SectionRows = rows
+                .GroupBy(r => r.Section)
+                .ToDictionary(g => g.Key, g => g.OrderBy(r => r.RowNumber).ToList());
+
+            var flap = SectionRows[GarmentSection.HeelFlap];
+            var turn = SectionRows[GarmentSection.HeelTurn];
+            var gusset = SectionRows[GarmentSection.Gusset];
+
+            HeelStitches = flap[0].StitchCount;
+            TurnStitches = turn[^1].StitchCount;
+            GussetPeakStitches = gusset[0].StitchCount;
+            FlapRowCount = flap.Count;
+            TurnRowCount = turn.Count;
+            GussetRowCount = gusset.Count;
+            RecomputeRowColors();
+        }
+        catch (ArgumentException ex)
+        {
+            ErrorMessage = ex.Message;
+            SectionRows = null;
+            RowColors = null;
+        }
+    }
+
+    private void RecomputeRowColors()
+    {
+        if (SectionRows is null) return;
+        RowColors = ColorwayMapper.MapRowColors(FlapRowCount + TurnRowCount + GussetRowCount, Colorway);
+    }
+
+    // Heel flap, turn, and gusset are sequential phases of the same
+    // physical construction, so one continuous stripe sequence should flow
+    // across all three even though each section's ShapingRow.RowNumber
+    // restarts at 1. This maps a section's local row number back onto the
+    // shared global sequence before looking up its color.
+    private Func<ShapingRow, string> ColorSelectorFor(int sectionOffset) =>
+        row => RowColors?.GetValueOrDefault(row.RowNumber + sectionOffset) ?? "#7c9c82";
+
+    private sealed class SockHeelInput
+    {
+        public double StitchesPerInch { get; set; } = 5.5;
+        public double RowsPerInch { get; set; } = 7.5;
+        public double FootCircumferenceInches { get; set; } = 8;
+    }
+}
