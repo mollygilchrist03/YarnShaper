@@ -42,7 +42,7 @@ namespace YarnShaper.Core.Algorithms;
 /// multiple of 8 during setup.
 /// </para>
 /// </remarks>
-public static class SockHeelCalculator
+public static class SockHeelShapingCalculator
 {
     public static IReadOnlyList<ShapingRow> Calculate(Gauge gauge, SockHeelMeasurements measurements)
     {

@@ -3,7 +3,7 @@ using YarnShaper.Core.Models;
 
 namespace YarnShaper.Core.Tests.Algorithms;
 
-public class SockHeelCalculatorTests
+public class SockHeelShapingCalculatorTests
 {
     private static readonly Gauge WorstedGauge = new(StitchesPerInch: 5.5, RowsPerInch: 7.5);
 
@@ -11,7 +11,7 @@ public class SockHeelCalculatorTests
     public void ProducesTheExactSchedulesForAKnownInput()
     {
         // 8in foot at 5.5 sts/in -> 44 sts, rounded to the nearest multiple of 8 -> 48 total, 24 heel sts.
-        var rows = SockHeelCalculator.Calculate(WorstedGauge, new SockHeelMeasurements(FootCircumferenceInches: 8));
+        var rows = SockHeelShapingCalculator.Calculate(WorstedGauge, new SockHeelMeasurements(FootCircumferenceInches: 8));
 
         var flap = rows.Where(r => r.Section == GarmentSection.HeelFlap).OrderBy(r => r.RowNumber).ToList();
         Assert.Equal(24, flap.Count);
@@ -38,7 +38,7 @@ public class SockHeelCalculatorTests
     public void HeelTurnEndsAtHalfHeelStitchesPlusTwo(double footInches, double stitchGauge, double rowGauge)
     {
         var gauge = new Gauge(stitchGauge, rowGauge);
-        var rows = SockHeelCalculator.Calculate(gauge, new SockHeelMeasurements(footInches));
+        var rows = SockHeelShapingCalculator.Calculate(gauge, new SockHeelMeasurements(footInches));
 
         var flapStitches = rows.First(r => r.Section == GarmentSection.HeelFlap).StitchCount;
         var lastTurnRow = rows.Where(r => r.Section == GarmentSection.HeelTurn).OrderBy(r => r.RowNumber).Last();
@@ -54,7 +54,7 @@ public class SockHeelCalculatorTests
     public void GussetDecreasesConvergeExactlyBackToHeelStitchCount(double footInches, double stitchGauge, double rowGauge)
     {
         var gauge = new Gauge(stitchGauge, rowGauge);
-        var rows = SockHeelCalculator.Calculate(gauge, new SockHeelMeasurements(footInches));
+        var rows = SockHeelShapingCalculator.Calculate(gauge, new SockHeelMeasurements(footInches));
 
         var heelStitches = rows.First(r => r.Section == GarmentSection.HeelFlap).StitchCount;
         var lastGussetRow = rows.Where(r => r.Section == GarmentSection.Gusset).OrderBy(r => r.RowNumber).Last();
@@ -65,7 +65,7 @@ public class SockHeelCalculatorTests
     [Fact]
     public void HeelFlapStitchCountIsConstant()
     {
-        var rows = SockHeelCalculator.Calculate(WorstedGauge, new SockHeelMeasurements(8));
+        var rows = SockHeelShapingCalculator.Calculate(WorstedGauge, new SockHeelMeasurements(8));
 
         var flap = rows.Where(r => r.Section == GarmentSection.HeelFlap).ToList();
         Assert.All(flap, r => Assert.Equal(flap[0].StitchCount, r.StitchCount));
@@ -75,7 +75,7 @@ public class SockHeelCalculatorTests
     [Fact]
     public void HeelTurnStitchCountIsStrictlyDecreasingByOnePerRow()
     {
-        var rows = SockHeelCalculator.Calculate(WorstedGauge, new SockHeelMeasurements(8));
+        var rows = SockHeelShapingCalculator.Calculate(WorstedGauge, new SockHeelMeasurements(8));
 
         var turn = rows.Where(r => r.Section == GarmentSection.HeelTurn).OrderBy(r => r.RowNumber).ToList();
         for (var i = 1; i < turn.Count; i++)
@@ -88,7 +88,7 @@ public class SockHeelCalculatorTests
     [Fact]
     public void GussetStitchCountIsMonotonicNonIncreasingAfterPickup()
     {
-        var rows = SockHeelCalculator.Calculate(WorstedGauge, new SockHeelMeasurements(8));
+        var rows = SockHeelShapingCalculator.Calculate(WorstedGauge, new SockHeelMeasurements(8));
 
         var gusset = rows.Where(r => r.Section == GarmentSection.Gusset).OrderBy(r => r.RowNumber).ToList();
         for (var i = 1; i < gusset.Count; i++)
@@ -103,6 +103,6 @@ public class SockHeelCalculatorTests
         var tinyGauge = new Gauge(StitchesPerInch: 1, RowsPerInch: 1);
 
         Assert.Throws<ArgumentException>(() =>
-            SockHeelCalculator.Calculate(tinyGauge, new SockHeelMeasurements(FootCircumferenceInches: 1)));
+            SockHeelShapingCalculator.Calculate(tinyGauge, new SockHeelMeasurements(FootCircumferenceInches: 1)));
     }
 }
