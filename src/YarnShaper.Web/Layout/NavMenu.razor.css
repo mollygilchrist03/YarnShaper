@@ -21,42 +21,21 @@
 .brand-mark {
     width: 1.4rem;
     height: 1.4rem;
-    color: #b9c9bb;
     flex-shrink: 0;
 }
 
 .nav-toggle {
     display: none;
+    align-items: center;
+    justify-content: center;
     width: 2rem;
     height: 2rem;
     background: rgba(255, 255, 255, 0.08);
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    position: relative;
+    color: var(--color-cream);
 }
-
-    .nav-toggle span, .nav-toggle span::before, .nav-toggle span::after {
-        content: "";
-        position: absolute;
-        left: 0.55rem;
-        right: 0.55rem;
-        height: 2px;
-        background: var(--color-cream);
-    }
-
-    .nav-toggle span {
-        top: 50%;
-        transform: translateY(-50%);
-    }
-
-        .nav-toggle span::before {
-            top: -6px;
-        }
-
-        .nav-toggle span::after {
-            top: 6px;
-        }
 
 .nav-links {
     display: flex;
@@ -99,6 +78,11 @@
             background: none;
         }
 
+    ::deep .nav-link .icon {
+        margin-right: 0.5rem;
+        opacity: 0.85;
+    }
+
 .nav-section {
     margin-top: 1.25rem;
     padding-top: 1rem;
@@ -117,7 +101,7 @@
 
 @media (max-width: 640.98px) {
     .nav-toggle {
-        display: block;
+        display: flex;
     }
 
     .nav-links.collapsed {

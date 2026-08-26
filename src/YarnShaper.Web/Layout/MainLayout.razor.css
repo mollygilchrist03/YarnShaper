@@ -30,6 +30,10 @@ main {
         color: var(--color-sage-dark);
     }
 
+    .top-row ::deep a .icon {
+        margin-right: 0.35rem;
+    }
+
     .top-row ::deep a:hover {
         color: var(--color-rust-dark);
     }

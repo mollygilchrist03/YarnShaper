@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="64" height="64" role="img" aria-label="YarnShaper mark">
+  <title>YarnShaper mark</title>
+  <clipPath id="c"><path d="M10 12 L90 12 L68 90 L32 90 Z"></path></clipPath>
+  <g clip-path="url(#c)">
+      <rect x="0" y="12" width="100" height="31.57" fill="#2a231d"></rect>
+      <rect x="0" y="43.57" width="100" height="16.71" fill="#5f7f65"></rect>
+      <rect x="0" y="60.29" width="100" height="29.71" fill="#2a231d"></rect>
+  </g>
+</svg>

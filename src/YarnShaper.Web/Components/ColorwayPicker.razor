@@ -9,10 +9,10 @@
             <input type="color" value="@stripe.Color" @onchange="e => UpdateColor(index, e)" aria-label="Stripe @(index + 1) color" />
             <input type="number" min="1" value="@stripe.RowCount" @onchange="e => UpdateRowCount(index, e)" aria-label="Stripe @(index + 1) row count" />
             <span class="stripe-row-suffix">rows</span>
-            <button type="button" class="remove-stripe" @onclick="() => RemoveStripe(index)" disabled="@(Value.Stripes.Count <= 1)" aria-label="Remove stripe @(index + 1)">&times;</button>
+            <button type="button" class="remove-stripe" @onclick="() => RemoveStripe(index)" disabled="@(Value.Stripes.Count <= 1)" aria-label="Remove stripe @(index + 1)"><Icon Name="x-lg" /></button>
         </div>
     }
-    <button type="button" class="btn-link add-stripe" @onclick="AddStripe">+ Add stripe</button>
+    <button type="button" class="btn-link add-stripe" @onclick="AddStripe"><Icon Name="plus-lg" /> Add stripe</button>
     <p class="colorway-repeat">Repeats every @Value.TotalRows rows</p>
 </div>
 

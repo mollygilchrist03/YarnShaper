@@ -56,7 +56,7 @@
     <div class="results">
         @if (ErrorMessage is not null)
         {
-            <div class="error-banner">@ErrorMessage</div>
+            <div class="error-banner"><Icon Name="exclamation-triangle-fill" /> @ErrorMessage</div>
         }
 
         @if (SectionRows is not null)
