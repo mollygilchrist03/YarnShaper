@@ -13,6 +13,8 @@ entirely in the browser.
 
 ![Sock heel schematic — a constant-width flap, a narrowing short-row turn, and a gusset that picks up then decreases](docs/screenshots/sock-heel-calculator.png)
 
+![Granny square schematic — round-by-round cluster growth with a color-per-round colorway](docs/screenshots/granny-square-calculator.png)
+
 ## What it does
 
 Enter a gauge (stitches/rows per inch) and a set of finished measurements,
@@ -31,6 +33,12 @@ construction: a square heel flap, a short-row heel turn that narrows to a
 point, and a gusset that picks up stitches along the flap and decreases
 them back out — reusing the same schematic renderer and colorway picker,
 proving the pipeline isn't raglan-specific.
+
+The granny square calculator is the simplest of the three: one round-based
+section that grows by a constant 4 clusters every round. Its default
+colorway alternates every single round rather than every few rows — the
+classic "different color each round" granny square look — which the same
+`ColorwayMapper` handles without any changes.
 
 ## Notable engineering decisions
 
@@ -55,7 +63,7 @@ proving the pipeline isn't raglan-specific.
   any correct schedule: monotonic stitch growth, exactly +2 stitches per
   increase round, convergence on the target circumference within rounding
   tolerance, and a hard failure when the yoke is too shallow for the
-  required shaping. 48 tests, all in `YarnShaper.Core.Tests`.
+  required shaping. 54 tests, all in `YarnShaper.Core.Tests`.
 - **The sock heel's stitch counts are rounded so the gusset math always
   divides evenly, not just for round numbers.** A heel turn always ends at
   H/2 + 2 stitches and a gusset always picks up 3H/2 + 2, so decreasing 2
@@ -79,6 +87,15 @@ proving the pipeline isn't raglan-specific.
   the stripe pattern once against the shared row count and hands the same
   `RowNumber → color` map to every section, so a stripe boundary lines up
   identically across all four schematics.
+- **Not every construction needs the hard algorithm.** The granny square's
+  4-clusters-per-round rule is a closed-form formula (`4 * round`), so
+  [`GrannySquareRoundsCalculator`](src/YarnShaper.Core/Algorithms/GrannySquareRoundsCalculator.cs)
+  doesn't reach for `EvenDistribution` at all — deliberately, since forcing
+  every calculator through the same machinery would hide which problems
+  actually need it. What's interesting here is downstream instead: it's
+  the first calculator with a single round-based section, and the first
+  page whose default colorway changes color every round rather than every
+  few rows.
 - **CI gates the deploy on the test suite.** The GitHub Actions workflow
   runs `dotnet test` before it ever builds or publishes — a broken shaping
   calculation can't reach the live site.
@@ -111,7 +128,5 @@ dotnet run --project src/YarnShaper.Web
 
 Things planned but not yet built:
 
-- Granny square / round-based calculator (round-by-round color is the
-  classic use case for the colorway layer)
 - Yardage estimator per colorway
 - Export the schematic as a downloadable SVG/PNG
