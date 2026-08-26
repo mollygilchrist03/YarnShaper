@@ -40,6 +40,10 @@ colorway alternates every single round rather than every few rows — the
 classic "different color each round" granny square look — which the same
 `ColorwayMapper` handles without any changes.
 
+The raglan and sock heel pages also estimate yardage per color from the
+active colorway — how many yards of each stripe color the piece actually
+uses, not just how many rows it spans.
+
 ## Notable engineering decisions
 
 - **The shaping math is the actual point, so it's isolated and tested on
@@ -63,7 +67,7 @@ classic "different color each round" granny square look — which the same
   any correct schedule: monotonic stitch growth, exactly +2 stitches per
   increase round, convergence on the target circumference within rounding
   tolerance, and a hard failure when the yoke is too shallow for the
-  required shaping. 54 tests, all in `YarnShaper.Core.Tests`.
+  required shaping. 61 tests, all in `YarnShaper.Core.Tests`.
 - **The sock heel's stitch counts are rounded so the gusset math always
   divides evenly, not just for round numbers.** A heel turn always ends at
   H/2 + 2 stitches and a gusset always picks up 3H/2 + 2, so decreasing 2
@@ -96,6 +100,17 @@ classic "different color each round" granny square look — which the same
   the first calculator with a single round-based section, and the first
   page whose default colorway changes color every round rather than every
   few rows.
+- **Yardage is derived from the same gauge already on screen, not a
+  separate yarn-weight picker.** There's no way to get exact yardage from
+  stitch counts alone — only weighing a real swatch does that — but
+  [`YardageEstimator`](src/YarnShaper.Core/Yardage/YardageEstimator.cs)
+  uses a widely-cited rule of thumb (a stitch uses about 5&times; its own
+  width in yarn) and reuses the calculator's existing stitches-per-inch
+  for that width, so there's one fewer input to keep in sync with reality.
+  It's deliberately **not** wired into the granny square page: that
+  calculator's stitch count is a crochet cluster count, not a real stitch
+  count, and faking a cluster-to-stitch conversion would produce a number
+  that looks precise without being grounded in anything.
 - **CI gates the deploy on the test suite.** The GitHub Actions workflow
   runs `dotnet test` before it ever builds or publishes — a broken shaping
   calculation can't reach the live site.
@@ -128,5 +143,4 @@ dotnet run --project src/YarnShaper.Web
 
 Things planned but not yet built:
 
-- Yardage estimator per colorway
 - Export the schematic as a downloadable SVG/PNG
