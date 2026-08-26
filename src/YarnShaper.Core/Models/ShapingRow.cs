@@ -17,7 +17,10 @@ public enum GarmentSection
     Front,
     LeftSleeve,
     RightSleeve,
-    Round
+    Round,
+    HeelFlap,
+    HeelTurn,
+    Gusset
 }
 
 /// <summary>
