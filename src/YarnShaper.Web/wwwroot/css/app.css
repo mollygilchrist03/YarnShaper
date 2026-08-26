@@ -541,6 +541,13 @@ input[type="number"], input[type="text"] {
         color: var(--color-ink-soft);
     }
 
+    .schematic .download-link {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 0.5rem;
+        font-size: 0.78rem;
+    }
+
 /* Home / landing page */
 
 .hero {
