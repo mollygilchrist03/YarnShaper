@@ -1,0 +1,30 @@
+@namespace YarnShaper.Web.Components
+
+@if (YardageByColor.Count > 0)
+{
+    <div class="yardage-breakdown">
+        <h2>Estimated yardage</h2>
+        <ul class="yardage-list">
+            @foreach (var entry in YardageByColor.OrderByDescending(kv => kv.Value))
+            {
+                <li>
+                    <span class="yardage-swatch" style="background: @entry.Key;"></span>
+                    <span class="yardage-color">@entry.Key</span>
+                    <span class="yardage-value">@entry.Value.ToString("0.#") yd</span>
+                </li>
+            }
+            <li class="yardage-total">
+                <span class="yardage-color">Total</span>
+                <span class="yardage-value">@YardageByColor.Values.Sum().ToString("0.#") yd</span>
+            </li>
+        </ul>
+        <p class="yardage-caveat">
+            Rough estimate — assumes a stitch uses about 5&#215; its own width in yarn. Not a substitute for weighing a gauge swatch.
+        </p>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyDictionary<string, double> YardageByColor { get; set; } = new Dictionary<string, double>();
+}

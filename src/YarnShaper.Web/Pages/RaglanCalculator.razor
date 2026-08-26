@@ -82,6 +82,8 @@
                 <SchematicRenderer Label="Left sleeve" Rows="@SectionRows[GarmentSection.LeftSleeve]" ColorSelector="ColorForRow" />
                 <SchematicRenderer Label="Right sleeve" Rows="@SectionRows[GarmentSection.RightSleeve]" ColorSelector="ColorForRow" />
             </div>
+
+            <YardageBreakdown YardageByColor="@(YardageByColor ?? new Dictionary<string, double>())" />
         }
     </div>
 </div>
@@ -98,6 +100,8 @@
         new([new Stripe("#7c9c82", 4), new Stripe("#c98a3e", 2)]);
 
     private IReadOnlyDictionary<int, string>? RowColors;
+    private IReadOnlyDictionary<string, double>? YardageByColor;
+    private Gauge? CurrentGauge;
 
     protected override void OnInitialized() => Calculate();
 
@@ -121,6 +125,7 @@
             CastOnStitches = SectionRows.Values.Sum(s => s[0].StitchCount);
             TotalYokeRows = SectionRows[GarmentSection.Back].Max(r => r.RowNumber);
             FinalUnderarmStitches = SectionRows.Values.Sum(s => s[^1].StitchCount);
+            CurrentGauge = gauge;
             RecomputeRowColors();
         }
         catch (ArgumentException ex)
@@ -128,6 +133,7 @@
             ErrorMessage = ex.Message;
             SectionRows = null;
             RowColors = null;
+            YardageByColor = null;
         }
     }
 
@@ -135,6 +141,14 @@
     {
         if (SectionRows is null) return;
         RowColors = ColorwayMapper.MapRowColors(TotalYokeRows, Colorway);
+        RecomputeYardage();
+    }
+
+    private void RecomputeYardage()
+    {
+        if (SectionRows is null || CurrentGauge is null) return;
+        var coloredRows = SectionRows.Values.SelectMany(rows => rows).Select(r => (r.StitchCount, ColorForRow(r)));
+        YardageByColor = YardageEstimator.EstimateYardageByColor(coloredRows, CurrentGauge);
     }
 
     private string ColorForRow(ShapingRow row) =>
