@@ -11,6 +11,8 @@ entirely in the browser.
 
 ![Raglan yoke schematic — four sections rendered as stepped SVG trapezoids](docs/screenshots/raglan-calculator.png)
 
+![Sock heel schematic — a constant-width flap, a narrowing short-row turn, and a gusset that picks up then decreases](docs/screenshots/sock-heel-calculator.png)
+
 ## What it does
 
 Enter a gauge (stitches/rows per inch) and a set of finished measurements,
@@ -23,6 +25,12 @@ A colorway picker sits alongside it: build a stripe sequence (color + row
 count per stripe), and it's mapped onto the real row data — all four
 sections recolor in sync, since a raglan yoke is worked in the round and
 row N is the same physical round in every section.
+
+The sock heel calculator is a second, mechanically different
+construction: a square heel flap, a short-row heel turn that narrows to a
+point, and a gusset that picks up stitches along the flap and decreases
+them back out — reusing the same schematic renderer and colorway picker,
+proving the pipeline isn't raglan-specific.
 
 ## Notable engineering decisions
 
@@ -47,7 +55,17 @@ row N is the same physical round in every section.
   any correct schedule: monotonic stitch growth, exactly +2 stitches per
   increase round, convergence on the target circumference within rounding
   tolerance, and a hard failure when the yoke is too shallow for the
-  required shaping. 35 tests, all in `YarnShaper.Core.Tests`.
+  required shaping. 48 tests, all in `YarnShaper.Core.Tests`.
+- **The sock heel's stitch counts are rounded so the gusset math always
+  divides evenly, not just for round numbers.** A heel turn always ends at
+  H/2 + 2 stitches and a gusset always picks up 3H/2 + 2, so decreasing 2
+  stitches per round only lands back on the original heel-needle count if
+  that total is a multiple of 4. Rather than validating that constraint
+  and rejecting awkward inputs,
+  [`SockHeelShapingCalculator`](src/YarnShaper.Core/Algorithms/SockHeelShapingCalculator.cs)
+  rounds the total round to the nearest multiple of 8 up front, so the
+  convergence is exact for any gauge/circumference combination — the
+  derivation is in the class's XML doc remarks alongside the code.
 - **SVG straight from Razor, no Canvas/JS interop.** `SchematicRenderer.razor`
   takes a section's row list and draws it directly as stacked, proportionally
   widening `<rect>` bands — the "hard-to-fake" part of a schematic (increases
@@ -93,7 +111,6 @@ dotnet run --project src/YarnShaper.Web
 
 Things planned but not yet built:
 
-- Sock heel turn + gusset calculator, reusing the same renderer
 - Granny square / round-based calculator (round-by-round color is the
   classic use case for the colorway layer)
 - Yardage estimator per colorway
