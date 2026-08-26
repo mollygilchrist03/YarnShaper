@@ -1,0 +1,111 @@
+@page "/granny-square"
+
+<PageTitle>Granny Square Calculator</PageTitle>
+
+<h1>Granny Square Calculator</h1>
+<p>Enter a gauge (rounds per inch of growth) and a target side length to generate the round-by-round cluster count for a classic granny square.</p>
+
+<div class="calculator-layout">
+    <EditForm Model="@Input" OnValidSubmit="Calculate" class="card form-card">
+        <DataAnnotationsValidator />
+
+        <div class="field-group">
+            <h2>Gauge</h2>
+            <div class="form-grid">
+                <label>
+                    Rounds / inch
+                    <InputNumber @bind-Value="Input.RoundsPerInch" step="0.1" />
+                </label>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <h2>Measurements (in)</h2>
+            <div class="form-grid">
+                <label>
+                    Side length
+                    <InputNumber @bind-Value="Input.SideLengthInches" step="0.25" />
+                </label>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <h2>Colorway</h2>
+            <ColorwayPicker @bind-Value="Colorway" @bind-Value:after="RecomputeRowColors" />
+        </div>
+
+        <button type="submit" class="btn-primary">Calculate</button>
+    </EditForm>
+
+    <div class="results">
+        @if (ErrorMessage is not null)
+        {
+            <div class="error-banner"><Icon Name="exclamation-triangle-fill" /> @ErrorMessage</div>
+        }
+
+        @if (Rows is not null)
+        {
+            <div class="summary-stats">
+                <div class="summary-stat">
+                    <span class="value">@Rows.Count</span>
+                    <span class="label">Total rounds</span>
+                </div>
+                <div class="summary-stat">
+                    <span class="value">@Rows[^1].StitchCount</span>
+                    <span class="label">Clusters in final round</span>
+                </div>
+            </div>
+
+            <div class="schematic-row">
+                <SchematicRenderer Label="Granny square" Rows="@Rows" ColorSelector="ColorForRow" />
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private GrannySquareInput Input { get; set; } = new();
+    private string? ErrorMessage;
+    private List<ShapingRow>? Rows;
+
+    private StripeSequence Colorway { get; set; } =
+        new([new Stripe("#7c9c82", 1), new Stripe("#c98a3e", 1)]);
+
+    private IReadOnlyDictionary<int, string>? RowColors;
+
+    protected override void OnInitialized() => Calculate();
+
+    private void Calculate()
+    {
+        ErrorMessage = null;
+        try
+        {
+            var gauge = new Gauge(StitchesPerInch: 1, RowsPerInch: Input.RoundsPerInch);
+            var measurements = new GrannySquareMeasurements(Input.SideLengthInches);
+
+            Rows = GrannySquareRoundsCalculator.Calculate(gauge, measurements).OrderBy(r => r.RowNumber).ToList();
+            RecomputeRowColors();
+        }
+        catch (ArgumentException ex)
+        {
+            ErrorMessage = ex.Message;
+            Rows = null;
+            RowColors = null;
+        }
+    }
+
+    private void RecomputeRowColors()
+    {
+        if (Rows is null) return;
+        RowColors = ColorwayMapper.MapRowColors(Rows.Count, Colorway);
+    }
+
+    private string ColorForRow(ShapingRow row) =>
+        RowColors?.GetValueOrDefault(row.RowNumber) ?? "#7c9c82";
+
+    private sealed class GrannySquareInput
+    {
+        public double RoundsPerInch { get; set; } = 1.5;
+        public double SideLengthInches { get; set; } = 6;
+    }
+}
