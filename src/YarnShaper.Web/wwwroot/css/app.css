@@ -971,3 +971,46 @@ input[type="number"], input[type="text"] {
     font-size: 0.9rem;
     margin: 0;
 }
+
+/* Print / PDF export */
+
+.results-toolbar {
+    margin-bottom: 1.25rem;
+}
+
+.print-button {
+    font-size: 0.85rem;
+}
+
+@media print {
+    .sidebar, .top-row, .form-card, .results-toolbar {
+        display: none !important;
+    }
+
+    .calculator-layout {
+        display: block;
+    }
+
+    body {
+        background: var(--color-cream);
+    }
+
+    .card, .schematic, .yardage-list {
+        box-shadow: none;
+        break-inside: avoid;
+    }
+
+    .schematic-row {
+        gap: 0.75rem;
+    }
+
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

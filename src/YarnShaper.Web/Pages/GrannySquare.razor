@@ -67,6 +67,10 @@
 
         @if (Rows is not null)
         {
+            <div class="results-toolbar">
+                <button type="button" class="btn-link print-button" @onclick="PrintPage">Download as PDF</button>
+            </div>
+
             <div class="summary-stats">
                 <div class="summary-stat">
                     <span class="value"><CountUp Value="@Rows.Count" /></span>
@@ -158,6 +162,8 @@
             ShareConfirmation = url;
         }
     }
+
+    private async Task PrintPage() => await JS.InvokeVoidAsync("print");
 
     private void Calculate()
     {
