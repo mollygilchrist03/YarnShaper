@@ -13,13 +13,17 @@
                  style="width: @(SvgWidth.ToString(CultureInfo.InvariantCulture))px; max-width: 100%; height: auto;"
                  role="img"
                  aria-label="@(Label ?? "Shaping schematic")">
-                @foreach (var band in Bands)
+                @{ var bands = Bands; }
+                @for (var i = 0; i < bands.Count; i++)
                 {
-                    <rect x="@band.X.ToString(CultureInfo.InvariantCulture)"
+                    var band = bands[i];
+                    <rect class="schematic-band"
+                          x="@band.X.ToString(CultureInfo.InvariantCulture)"
                           y="@band.Y.ToString(CultureInfo.InvariantCulture)"
                           width="@band.Width.ToString(CultureInfo.InvariantCulture)"
                           height="@RowHeightPx.ToString(CultureInfo.InvariantCulture)"
-                          fill="@band.Fill">
+                          fill="@band.Fill"
+                          style="animation-delay: @(Math.Min(i * 9, 420))ms">
                         <title>Row @band.Row.RowNumber: @band.Row.StitchCount sts (@band.Row.Action)</title>
                     </rect>
                 }
