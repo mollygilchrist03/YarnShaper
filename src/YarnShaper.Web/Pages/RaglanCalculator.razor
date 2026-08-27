@@ -14,11 +14,11 @@
             <div class="form-grid">
                 <label>
                     Stitches / inch
-                    <InputNumber @bind-Value="Input.StitchesPerInch" step="0.1" />
+                    <InputNumber @bind-Value="Input.StitchesPerInch" @bind-Value:after="Calculate" step="0.1" />
                 </label>
                 <label>
                     Rows / inch
-                    <InputNumber @bind-Value="Input.RowsPerInch" step="0.1" />
+                    <InputNumber @bind-Value="Input.RowsPerInch" @bind-Value:after="Calculate" step="0.1" />
                 </label>
             </div>
         </div>
@@ -28,19 +28,19 @@
             <div class="form-grid">
                 <label>
                     Neck circumference
-                    <InputNumber @bind-Value="Input.NeckCircumferenceInches" step="0.25" />
+                    <InputNumber @bind-Value="Input.NeckCircumferenceInches" @bind-Value:after="Calculate" step="0.25" />
                 </label>
                 <label>
                     Bust circumference
-                    <InputNumber @bind-Value="Input.BustCircumferenceInches" step="0.25" />
+                    <InputNumber @bind-Value="Input.BustCircumferenceInches" @bind-Value:after="Calculate" step="0.25" />
                 </label>
                 <label>
                     Upper arm circumference
-                    <InputNumber @bind-Value="Input.UpperArmCircumferenceInches" step="0.25" />
+                    <InputNumber @bind-Value="Input.UpperArmCircumferenceInches" @bind-Value:after="Calculate" step="0.25" />
                 </label>
                 <label>
                     Yoke depth
-                    <InputNumber @bind-Value="Input.YokeDepthInches" step="0.25" />
+                    <InputNumber @bind-Value="Input.YokeDepthInches" @bind-Value:after="Calculate" step="0.25" />
                 </label>
             </div>
         </div>

@@ -14,11 +14,11 @@
             <div class="form-grid">
                 <label>
                     Stitches / inch
-                    <InputNumber @bind-Value="Input.StitchesPerInch" step="0.1" />
+                    <InputNumber @bind-Value="Input.StitchesPerInch" @bind-Value:after="Calculate" step="0.1" />
                 </label>
                 <label>
                     Rows / inch
-                    <InputNumber @bind-Value="Input.RowsPerInch" step="0.1" />
+                    <InputNumber @bind-Value="Input.RowsPerInch" @bind-Value:after="Calculate" step="0.1" />
                 </label>
             </div>
         </div>
@@ -28,7 +28,7 @@
             <div class="form-grid">
                 <label>
                     Foot circumference
-                    <InputNumber @bind-Value="Input.FootCircumferenceInches" step="0.25" />
+                    <InputNumber @bind-Value="Input.FootCircumferenceInches" @bind-Value:after="Calculate" step="0.25" />
                 </label>
             </div>
         </div>

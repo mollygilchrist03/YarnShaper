@@ -14,7 +14,7 @@
             <div class="form-grid">
                 <label>
                     Rounds / inch
-                    <InputNumber @bind-Value="Input.RoundsPerInch" step="0.1" />
+                    <InputNumber @bind-Value="Input.RoundsPerInch" @bind-Value:after="Calculate" step="0.1" />
                 </label>
             </div>
         </div>
@@ -24,7 +24,7 @@
             <div class="form-grid">
                 <label>
                     Side length
-                    <InputNumber @bind-Value="Input.SideLengthInches" step="0.25" />
+                    <InputNumber @bind-Value="Input.SideLengthInches" @bind-Value:after="Calculate" step="0.25" />
                 </label>
             </div>
         </div>
