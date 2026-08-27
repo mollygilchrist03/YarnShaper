@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using YarnShaper.Core.Algorithms;
 
 namespace YarnShaper.Web.Models;
 
@@ -14,6 +15,8 @@ public sealed record RaglanProjectPayload(
     double BustCircumferenceInches,
     double UpperArmCircumferenceInches,
     double YokeDepthInches,
+    double EaseInches,
+    RaglanStyle Style,
     List<StripeDto> Colorway);
 
 public sealed record SockHeelProjectPayload(

@@ -6,7 +6,7 @@
 <PageTitle>Raglan Calculator</PageTitle>
 
 <h1>Raglan Yoke Calculator</h1>
-<p>Enter a gauge swatch and finished measurements to generate a round-by-round shaping schedule for a top-down raglan yoke.</p>
+<p>Enter a gauge swatch and body measurements to generate a round-by-round shaping schedule for a raglan yoke, top-down or bottom-up.</p>
 
 <div class="calculator-layout">
     <EditForm EditContext="@Editor" OnValidSubmit="Calculate" class="card form-card">
@@ -29,7 +29,20 @@
         </div>
 
         <div class="field-group">
-            <h2>Measurements (in)</h2>
+            <h2>Construction</h2>
+            <div class="form-grid">
+                <label>
+                    Style
+                    <InputSelect @bind-Value="Style" @bind-Value:after="Calculate">
+                        <option value="@RaglanStyle.TopDown">Top-down</option>
+                        <option value="@RaglanStyle.BottomUp">Bottom-up</option>
+                    </InputSelect>
+                </label>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <h2>Body measurements (in)</h2>
             <div class="form-grid">
                 <label>
                     Neck circumference
@@ -37,12 +50,12 @@
                     <ValidationMessage For="@(() => Input.NeckCircumferenceInches)" />
                 </label>
                 <label>
-                    Bust circumference
+                    Body bust circumference
                     <InputNumber @bind-Value="Input.BustCircumferenceInches" @bind-Value:after="Calculate" step="0.25" />
                     <ValidationMessage For="@(() => Input.BustCircumferenceInches)" />
                 </label>
                 <label>
-                    Upper arm circumference
+                    Body upper arm circumference
                     <InputNumber @bind-Value="Input.UpperArmCircumferenceInches" @bind-Value:after="Calculate" step="0.25" />
                     <ValidationMessage For="@(() => Input.UpperArmCircumferenceInches)" />
                 </label>
@@ -51,7 +64,13 @@
                     <InputNumber @bind-Value="Input.YokeDepthInches" @bind-Value:after="Calculate" step="0.25" />
                     <ValidationMessage For="@(() => Input.YokeDepthInches)" />
                 </label>
+                <label>
+                    Ease
+                    <InputNumber @bind-Value="Input.EaseInches" @bind-Value:after="Calculate" step="0.5" />
+                    <ValidationMessage For="@(() => Input.EaseInches)" />
+                </label>
             </div>
+            <p class="field-hint">Ease is added to bust/upper arm above to get the finished garment size. Negative for a closer fit, positive for more room, zero to match your body measurement exactly.</p>
         </div>
 
         <div class="field-group">
@@ -93,24 +112,24 @@
 
             <div class="summary-stats">
                 <div class="summary-stat">
-                    <span class="value"><CountUp Value="@CastOnStitches" /></span>
-                    <span class="label">Cast-on stitches</span>
+                    <span class="value"><CountUp Value="@FirstRowStitches" /></span>
+                    <span class="label">@FirstRowLabel</span>
                 </div>
                 <div class="summary-stat">
                     <span class="value"><CountUp Value="@TotalYokeRows" /></span>
                     <span class="label">Yoke rows</span>
                 </div>
                 <div class="summary-stat">
-                    <span class="value"><CountUp Value="@FinalUnderarmStitches" /></span>
-                    <span class="label">Stitches at underarm</span>
+                    <span class="value"><CountUp Value="@LastRowStitches" /></span>
+                    <span class="label">@LastRowLabel</span>
                 </div>
             </div>
 
             <div class="schematic-row">
-                <SchematicRenderer Label="Back" Rows="@SectionRows[GarmentSection.Back]" ColorSelector="ColorForRow" />
-                <SchematicRenderer Label="Front" Rows="@SectionRows[GarmentSection.Front]" ColorSelector="ColorForRow" />
-                <SchematicRenderer Label="Left sleeve" Rows="@SectionRows[GarmentSection.LeftSleeve]" ColorSelector="ColorForRow" />
-                <SchematicRenderer Label="Right sleeve" Rows="@SectionRows[GarmentSection.RightSleeve]" ColorSelector="ColorForRow" />
+                <SchematicRenderer Label="Back" Rows="@SectionRows[GarmentSection.Back]" ColorSelector="ColorForRow" RowOneAtTop="@(Style == RaglanStyle.TopDown)" />
+                <SchematicRenderer Label="Front" Rows="@SectionRows[GarmentSection.Front]" ColorSelector="ColorForRow" RowOneAtTop="@(Style == RaglanStyle.TopDown)" />
+                <SchematicRenderer Label="Left sleeve" Rows="@SectionRows[GarmentSection.LeftSleeve]" ColorSelector="ColorForRow" RowOneAtTop="@(Style == RaglanStyle.TopDown)" />
+                <SchematicRenderer Label="Right sleeve" Rows="@SectionRows[GarmentSection.RightSleeve]" ColorSelector="ColorForRow" RowOneAtTop="@(Style == RaglanStyle.TopDown)" />
             </div>
 
             <YardageBreakdown YardageByColor="@(YardageByColor ?? new Dictionary<string, double>())" />
@@ -120,12 +139,16 @@
 
 @code {
     private RaglanInput Input { get; set; } = new();
+    private RaglanStyle Style { get; set; } = RaglanStyle.TopDown;
     private EditContext Editor { get; set; } = null!;
     private string? ErrorMessage;
     private Dictionary<GarmentSection, List<ShapingRow>>? SectionRows;
-    private int CastOnStitches;
+    private int FirstRowStitches;
     private int TotalYokeRows;
-    private int FinalUnderarmStitches;
+    private int LastRowStitches;
+
+    private string FirstRowLabel => Style == RaglanStyle.TopDown ? "Cast-on stitches" : "Stitches at underarm";
+    private string LastRowLabel => Style == RaglanStyle.TopDown ? "Stitches at underarm" : "Neck stitches";
 
     private StripeSequence Colorway { get; set; } =
         new([new Stripe("#7c9c82", 4), new Stripe("#c98a3e", 2)]);
@@ -168,6 +191,8 @@
         Input.BustCircumferenceInches = payload.BustCircumferenceInches;
         Input.UpperArmCircumferenceInches = payload.UpperArmCircumferenceInches;
         Input.YokeDepthInches = payload.YokeDepthInches;
+        Input.EaseInches = payload.EaseInches;
+        Style = payload.Style;
         Colorway = new StripeSequence(payload.Colorway.Select(s => new Stripe(s.Color, s.RowCount)).ToList());
     }
 
@@ -178,6 +203,8 @@
         Input.BustCircumferenceInches,
         Input.UpperArmCircumferenceInches,
         Input.YokeDepthInches,
+        Input.EaseInches,
+        Style,
         Colorway.Stripes.Select(s => new StripeDto(s.Color, s.RowCount)).ToList());
 
     private async Task SaveProject()
@@ -226,16 +253,17 @@
                 Input.NeckCircumferenceInches,
                 Input.BustCircumferenceInches,
                 Input.UpperArmCircumferenceInches,
-                Input.YokeDepthInches);
+                Input.YokeDepthInches,
+                Input.EaseInches);
 
-            var rows = RaglanShapingCalculator.Calculate(gauge, measurements);
+            var rows = RaglanShapingCalculator.Calculate(gauge, measurements, Style);
             SectionRows = rows
                 .GroupBy(r => r.Section)
                 .ToDictionary(g => g.Key, g => g.OrderBy(r => r.RowNumber).ToList());
 
-            CastOnStitches = SectionRows.Values.Sum(s => s[0].StitchCount);
+            FirstRowStitches = SectionRows.Values.Sum(s => s[0].StitchCount);
             TotalYokeRows = SectionRows[GarmentSection.Back].Max(r => r.RowNumber);
-            FinalUnderarmStitches = SectionRows.Values.Sum(s => s[^1].StitchCount);
+            LastRowStitches = SectionRows.Values.Sum(s => s[^1].StitchCount);
             CurrentGauge = gauge;
             RecomputeRowColors();
         }
@@ -284,5 +312,8 @@
 
         [Range(0.1, 100, ErrorMessage = "Enter a yoke depth greater than 0.")]
         public double YokeDepthInches { get; set; } = 8;
+
+        [Range(-20, 50, ErrorMessage = "Enter an ease between -20in and 50in.")]
+        public double EaseInches { get; set; }
     }
 }
