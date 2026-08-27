@@ -6,7 +6,7 @@
 <p>Enter a gauge swatch and foot circumference to generate the flap, short-row turn, and gusset shaping for a standard sock heel.</p>
 
 <div class="calculator-layout">
-    <EditForm Model="@Input" OnValidSubmit="Calculate" class="card form-card">
+    <EditForm EditContext="@Editor" OnValidSubmit="Calculate" class="card form-card">
         <DataAnnotationsValidator />
 
         <div class="field-group">
@@ -15,10 +15,12 @@
                 <label>
                     Stitches / inch
                     <InputNumber @bind-Value="Input.StitchesPerInch" @bind-Value:after="Calculate" step="0.1" />
+                    <ValidationMessage For="@(() => Input.StitchesPerInch)" />
                 </label>
                 <label>
                     Rows / inch
                     <InputNumber @bind-Value="Input.RowsPerInch" @bind-Value:after="Calculate" step="0.1" />
+                    <ValidationMessage For="@(() => Input.RowsPerInch)" />
                 </label>
             </div>
         </div>
@@ -29,6 +31,7 @@
                 <label>
                     Foot circumference
                     <InputNumber @bind-Value="Input.FootCircumferenceInches" @bind-Value:after="Calculate" step="0.25" />
+                    <ValidationMessage For="@(() => Input.FootCircumferenceInches)" />
                 </label>
             </div>
         </div>
@@ -77,6 +80,7 @@
 
 @code {
     private SockHeelInput Input { get; set; } = new();
+    private EditContext Editor { get; set; } = null!;
     private string? ErrorMessage;
     private Dictionary<GarmentSection, List<ShapingRow>>? SectionRows;
     private int HeelStitches;
@@ -93,11 +97,24 @@
     private IReadOnlyDictionary<string, double>? YardageByColor;
     private Gauge? CurrentGauge;
 
-    protected override void OnInitialized() => Calculate();
+    protected override void OnInitialized()
+    {
+        Editor = new EditContext(Input);
+        Calculate();
+    }
 
     private void Calculate()
     {
         ErrorMessage = null;
+
+        if (!Editor.Validate())
+        {
+            SectionRows = null;
+            RowColors = null;
+            YardageByColor = null;
+            return;
+        }
+
         try
         {
             var gauge = new Gauge(Input.StitchesPerInch, Input.RowsPerInch);
@@ -158,8 +175,13 @@
 
     private sealed class SockHeelInput
     {
+        [Range(0.1, 50, ErrorMessage = "Enter a stitch gauge greater than 0.")]
         public double StitchesPerInch { get; set; } = 5.5;
+
+        [Range(0.1, 50, ErrorMessage = "Enter a row gauge greater than 0.")]
         public double RowsPerInch { get; set; } = 7.5;
+
+        [Range(0.1, 100, ErrorMessage = "Enter a foot circumference greater than 0.")]
         public double FootCircumferenceInches { get; set; } = 8;
     }
 }

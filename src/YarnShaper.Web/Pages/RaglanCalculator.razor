@@ -6,7 +6,7 @@
 <p>Enter a gauge swatch and finished measurements to generate a round-by-round shaping schedule for a top-down raglan yoke.</p>
 
 <div class="calculator-layout">
-    <EditForm Model="@Input" OnValidSubmit="Calculate" class="card form-card">
+    <EditForm EditContext="@Editor" OnValidSubmit="Calculate" class="card form-card">
         <DataAnnotationsValidator />
 
         <div class="field-group">
@@ -15,10 +15,12 @@
                 <label>
                     Stitches / inch
                     <InputNumber @bind-Value="Input.StitchesPerInch" @bind-Value:after="Calculate" step="0.1" />
+                    <ValidationMessage For="@(() => Input.StitchesPerInch)" />
                 </label>
                 <label>
                     Rows / inch
                     <InputNumber @bind-Value="Input.RowsPerInch" @bind-Value:after="Calculate" step="0.1" />
+                    <ValidationMessage For="@(() => Input.RowsPerInch)" />
                 </label>
             </div>
         </div>
@@ -29,18 +31,22 @@
                 <label>
                     Neck circumference
                     <InputNumber @bind-Value="Input.NeckCircumferenceInches" @bind-Value:after="Calculate" step="0.25" />
+                    <ValidationMessage For="@(() => Input.NeckCircumferenceInches)" />
                 </label>
                 <label>
                     Bust circumference
                     <InputNumber @bind-Value="Input.BustCircumferenceInches" @bind-Value:after="Calculate" step="0.25" />
+                    <ValidationMessage For="@(() => Input.BustCircumferenceInches)" />
                 </label>
                 <label>
                     Upper arm circumference
                     <InputNumber @bind-Value="Input.UpperArmCircumferenceInches" @bind-Value:after="Calculate" step="0.25" />
+                    <ValidationMessage For="@(() => Input.UpperArmCircumferenceInches)" />
                 </label>
                 <label>
                     Yoke depth
                     <InputNumber @bind-Value="Input.YokeDepthInches" @bind-Value:after="Calculate" step="0.25" />
+                    <ValidationMessage For="@(() => Input.YokeDepthInches)" />
                 </label>
             </div>
         </div>
@@ -90,6 +96,7 @@
 
 @code {
     private RaglanInput Input { get; set; } = new();
+    private EditContext Editor { get; set; } = null!;
     private string? ErrorMessage;
     private Dictionary<GarmentSection, List<ShapingRow>>? SectionRows;
     private int CastOnStitches;
@@ -103,11 +110,24 @@
     private IReadOnlyDictionary<string, double>? YardageByColor;
     private Gauge? CurrentGauge;
 
-    protected override void OnInitialized() => Calculate();
+    protected override void OnInitialized()
+    {
+        Editor = new EditContext(Input);
+        Calculate();
+    }
 
     private void Calculate()
     {
         ErrorMessage = null;
+
+        if (!Editor.Validate())
+        {
+            SectionRows = null;
+            RowColors = null;
+            YardageByColor = null;
+            return;
+        }
+
         try
         {
             var gauge = new Gauge(Input.StitchesPerInch, Input.RowsPerInch);
@@ -156,11 +176,22 @@
 
     private sealed class RaglanInput
     {
+        [Range(0.1, 50, ErrorMessage = "Enter a stitch gauge greater than 0.")]
         public double StitchesPerInch { get; set; } = 5.5;
+
+        [Range(0.1, 50, ErrorMessage = "Enter a row gauge greater than 0.")]
         public double RowsPerInch { get; set; } = 7.5;
+
+        [Range(0.1, 100, ErrorMessage = "Enter a neck circumference greater than 0.")]
         public double NeckCircumferenceInches { get; set; } = 20;
+
+        [Range(0.1, 100, ErrorMessage = "Enter a bust circumference greater than 0.")]
         public double BustCircumferenceInches { get; set; } = 40;
+
+        [Range(0.1, 100, ErrorMessage = "Enter an upper arm circumference greater than 0.")]
         public double UpperArmCircumferenceInches { get; set; } = 12;
+
+        [Range(0.1, 100, ErrorMessage = "Enter a yoke depth greater than 0.")]
         public double YokeDepthInches { get; set; } = 8;
     }
 }

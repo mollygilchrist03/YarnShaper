@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace YarnShaper.Core.Models;
 
 /// <summary>
@@ -7,6 +9,15 @@ namespace YarnShaper.Core.Models;
 /// </summary>
 public sealed record Gauge(double StitchesPerInch, double RowsPerInch)
 {
+    public double StitchesPerInch { get; init; } = RequirePositive(StitchesPerInch);
+    public double RowsPerInch { get; init; } = RequirePositive(RowsPerInch);
+
+    private static double RequirePositive(double value, [CallerArgumentExpression(nameof(value))] string? name = null)
+    {
+        if (value <= 0) throw new ArgumentOutOfRangeException(name);
+        return value;
+    }
+
     public static Gauge FromSwatch(double stitchCount, double rowCount, double swatchWidthInches, double swatchHeightInches)
     {
         if (swatchWidthInches <= 0) throw new ArgumentOutOfRangeException(nameof(swatchWidthInches));

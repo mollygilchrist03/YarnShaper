@@ -6,7 +6,7 @@
 <p>Enter a gauge (rounds per inch of growth) and a target side length to generate the round-by-round cluster count for a classic granny square.</p>
 
 <div class="calculator-layout">
-    <EditForm Model="@Input" OnValidSubmit="Calculate" class="card form-card">
+    <EditForm EditContext="@Editor" OnValidSubmit="Calculate" class="card form-card">
         <DataAnnotationsValidator />
 
         <div class="field-group">
@@ -15,6 +15,7 @@
                 <label>
                     Rounds / inch
                     <InputNumber @bind-Value="Input.RoundsPerInch" @bind-Value:after="Calculate" step="0.1" />
+                    <ValidationMessage For="@(() => Input.RoundsPerInch)" />
                 </label>
             </div>
         </div>
@@ -25,6 +26,7 @@
                 <label>
                     Side length
                     <InputNumber @bind-Value="Input.SideLengthInches" @bind-Value:after="Calculate" step="0.25" />
+                    <ValidationMessage For="@(() => Input.SideLengthInches)" />
                 </label>
             </div>
         </div>
@@ -65,6 +67,7 @@
 
 @code {
     private GrannySquareInput Input { get; set; } = new();
+    private EditContext Editor { get; set; } = null!;
     private string? ErrorMessage;
     private List<ShapingRow>? Rows;
 
@@ -73,11 +76,23 @@
 
     private IReadOnlyDictionary<int, string>? RowColors;
 
-    protected override void OnInitialized() => Calculate();
+    protected override void OnInitialized()
+    {
+        Editor = new EditContext(Input);
+        Calculate();
+    }
 
     private void Calculate()
     {
         ErrorMessage = null;
+
+        if (!Editor.Validate())
+        {
+            Rows = null;
+            RowColors = null;
+            return;
+        }
+
         try
         {
             var gauge = new Gauge(StitchesPerInch: 1, RowsPerInch: Input.RoundsPerInch);
@@ -105,7 +120,10 @@
 
     private sealed class GrannySquareInput
     {
+        [Range(0.1, 50, ErrorMessage = "Enter a round gauge greater than 0.")]
         public double RoundsPerInch { get; set; } = 1.5;
+
+        [Range(0.1, 100, ErrorMessage = "Enter a side length greater than 0.")]
         public double SideLengthInches { get; set; } = 6;
     }
 }
