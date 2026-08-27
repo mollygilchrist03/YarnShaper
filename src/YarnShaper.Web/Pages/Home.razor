@@ -1,24 +1,42 @@
 @page "/"
+@implements IDisposable
 
 <PageTitle>Yarn Shaper</PageTitle>
 
 <div class="hero">
-    <img src="brand/mark/mark-5band.svg" alt="" class="hero-mark" />
     <div class="hero-copy">
         <span class="eyebrow">Garment shaping calculator</span>
-        <h1>Turn gauge and measurements into a knitting schedule you can actually see.</h1>
+        <h1>See what your sweater actually looks like <span class="accent">before you buy the yarn</span>.</h1>
         <p>
-            Yarn Shaper computes garment shaping — raglan sweater increases,
-            sock heels, granny squares, and more constructions to come —
-            from your gauge and finished measurements, then renders the
-            resulting stitch and row geometry live as an SVG schematic. No
-            generic mockup: the diagram is drawn directly from the same
-            numbers a knitter would follow.
+            Yarn Shaper computes garment shaping — raglan increases, sock heels,
+            granny squares — from your gauge and measurements, then renders it
+            live as an SVG schematic with your colorway mapped onto the real
+            construction. The panel on the right is running on placeholder
+            numbers right now, cycling through a few stripe sequences — no
+            input required.
         </p>
         <div class="actions">
-            <a class="btn-primary" href="raglan">Try the raglan calculator</a>
+            <a class="btn-primary" href="raglan">Try it with your numbers</a>
             <a class="btn-link" href="https://github.com/mollygilchrist03/YarnShaper" target="_blank"><Icon Name="github" /> View source</a>
         </div>
+    </div>
+
+    <div class="hero-demo">
+        @if (DemoRows is not null)
+        {
+            <div class="hero-demo-card">
+                <div class="hero-demo-schematics">
+                    <SchematicRenderer Rows="@DemoRows[GarmentSection.Back]" ColorSelector="ColorForRow" ShowDetails="false" StitchWidthPx="3.4" RowHeightPx="2.2" />
+                    <SchematicRenderer Rows="@DemoRows[GarmentSection.Front]" ColorSelector="ColorForRow" ShowDetails="false" StitchWidthPx="3.4" RowHeightPx="2.2" />
+                    <SchematicRenderer Rows="@DemoRows[GarmentSection.LeftSleeve]" ColorSelector="ColorForRow" ShowDetails="false" StitchWidthPx="3.4" RowHeightPx="2.2" />
+                    <SchematicRenderer Rows="@DemoRows[GarmentSection.RightSleeve]" ColorSelector="ColorForRow" ShowDetails="false" StitchWidthPx="3.4" RowHeightPx="2.2" />
+                </div>
+                <p class="hero-demo-caption">
+                    <span class="hero-demo-dot" aria-hidden="true"></span>
+                    Live preview &middot; auto-cycling colorway &middot; @CurrentPresetName
+                </p>
+            </div>
+        }
     </div>
 </div>
 
@@ -54,3 +72,73 @@
         <p>Download any schematic as a standalone SVG file, no JS interop required.</p>
     </div>
 </div>
+
+@code {
+    // Placeholder gauge/measurements — same shape as the raglan calculator's
+    // own defaults — so the hero demo shows a real, correctly-proportioned
+    // schedule without asking a first-time visitor for any input.
+    private static readonly Gauge DemoGauge = new(5.5, 7.5);
+    private static readonly RaglanMeasurements DemoMeasurements = new(
+        NeckCircumferenceInches: 20,
+        BustCircumferenceInches: 40,
+        UpperArmCircumferenceInches: 12,
+        YokeDepthInches: 8);
+
+    private static readonly TimeSpan CycleInterval = TimeSpan.FromSeconds(4);
+
+    private static readonly (string Name, StripeSequence Colorway)[] ColorwayPresets =
+    [
+        ("Sage & Gold", new StripeSequence([new Stripe("#7c9c82", 4), new Stripe("#c98a3e", 2)])),
+        ("Rust & Cream", new StripeSequence([new Stripe("#96482c", 3), new Stripe("#f1e9db", 1), new Stripe("#2a231d", 1)])),
+        ("Moss Ombre", new StripeSequence([new Stripe("#45604a", 2), new Stripe("#7c9c82", 2), new Stripe("#b9d0bd", 2)])),
+        ("Berry & Oat", new StripeSequence([new Stripe("#8c4a56", 3), new Stripe("#e4dbc9", 2)])),
+    ];
+
+    private Dictionary<GarmentSection, List<ShapingRow>>? DemoRows;
+    private int TotalDemoRows;
+    private IReadOnlyDictionary<int, string>? RowColors;
+    private int presetIndex;
+    private CancellationTokenSource? cts;
+
+    private string CurrentPresetName => ColorwayPresets[presetIndex].Name;
+
+    protected override void OnInitialized()
+    {
+        var rows = RaglanShapingCalculator.Calculate(DemoGauge, DemoMeasurements);
+        DemoRows = rows
+            .GroupBy(r => r.Section)
+            .ToDictionary(g => g.Key, g => g.OrderBy(r => r.RowNumber).ToList());
+        TotalDemoRows = DemoRows[GarmentSection.Back].Max(r => r.RowNumber);
+        ApplyPreset(0);
+
+        cts = new CancellationTokenSource();
+        _ = CyclePresetsAsync(cts.Token);
+    }
+
+    private void ApplyPreset(int index)
+    {
+        presetIndex = index;
+        RowColors = ColorwayMapper.MapRowColors(TotalDemoRows, ColorwayPresets[index].Colorway);
+    }
+
+    private async Task CyclePresetsAsync(CancellationToken token)
+    {
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                await Task.Delay(CycleInterval, token);
+                ApplyPreset((presetIndex + 1) % ColorwayPresets.Length);
+                StateHasChanged();
+            }
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    private string ColorForRow(ShapingRow row) =>
+        RowColors?.GetValueOrDefault(row.RowNumber) ?? "#7c9c82";
+
+    public void Dispose() => cts?.Cancel();
+}

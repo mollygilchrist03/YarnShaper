@@ -29,10 +29,13 @@
                 }
             </svg>
         </div>
-        <p class="schematic-caption">@Rows[0].StitchCount &rarr; @Rows[^1].StitchCount sts &middot; @Rows.Count rows</p>
-        <a class="btn-link download-link" download="@FileName" href="@DownloadHref">
-            <Icon Name="download" /> Download SVG
-        </a>
+        @if (ShowDetails)
+        {
+            <p class="schematic-caption">@Rows[0].StitchCount &rarr; @Rows[^1].StitchCount sts &middot; @Rows.Count rows</p>
+            <a class="btn-link download-link" download="@FileName" href="@DownloadHref">
+                <Icon Name="download" /> Download SVG
+            </a>
+        }
     </figure>
 }
 
@@ -64,6 +67,10 @@
     /// </summary>
     [Parameter]
     public bool RowOneAtTop { get; set; } = true;
+
+    /// <summary>False hides the stitch-count caption and download link — for compact previews (e.g. the home page hero demo) where only the shape itself matters.</summary>
+    [Parameter]
+    public bool ShowDetails { get; set; } = true;
 
     private double SvgWidth => Rows.Count == 0 ? 0 : Rows.Max(r => r.StitchCount) * StitchWidthPx;
     private double SvgHeight => Rows.Count * RowHeightPx;
