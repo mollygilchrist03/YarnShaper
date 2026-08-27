@@ -1,4 +1,6 @@
 @page "/raglan"
+@inject NavigationManager Nav
+@inject ProjectStore ProjectStore
 
 <PageTitle>Raglan Calculator</PageTitle>
 
@@ -56,6 +58,18 @@
             <ColorwayPicker @bind-Value="Colorway" @bind-Value:after="RecomputeRowColors" />
         </div>
 
+        <div class="field-group">
+            <h2>Save</h2>
+            <div class="save-row">
+                <input type="text" placeholder="Project name" @bind="SaveName" @bind:event="oninput" />
+                <button type="button" class="btn-primary" @onclick="SaveProject" disabled="@(string.IsNullOrWhiteSpace(SaveName) || SectionRows is null)">Save</button>
+            </div>
+            @if (SavedConfirmation is not null)
+            {
+                <p class="save-confirmation">@SavedConfirmation</p>
+            }
+        </div>
+
         <button type="submit" class="btn-primary">Calculate</button>
     </EditForm>
 
@@ -109,11 +123,48 @@
     private IReadOnlyDictionary<int, string>? RowColors;
     private IReadOnlyDictionary<string, double>? YardageByColor;
     private Gauge? CurrentGauge;
+    private string SaveName = "";
+    private string? SavedConfirmation;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         Editor = new EditContext(Input);
+
+        var loadId = QueryStringHelper.GetParam(Nav.Uri, "load");
+        if (loadId is not null)
+        {
+            var payload = await ProjectStore.LoadPayloadAsync<RaglanProjectPayload>(loadId);
+            if (payload is not null)
+            {
+                Input.StitchesPerInch = payload.StitchesPerInch;
+                Input.RowsPerInch = payload.RowsPerInch;
+                Input.NeckCircumferenceInches = payload.NeckCircumferenceInches;
+                Input.BustCircumferenceInches = payload.BustCircumferenceInches;
+                Input.UpperArmCircumferenceInches = payload.UpperArmCircumferenceInches;
+                Input.YokeDepthInches = payload.YokeDepthInches;
+                Colorway = new StripeSequence(payload.Colorway.Select(s => new Stripe(s.Color, s.RowCount)).ToList());
+            }
+        }
+
         Calculate();
+    }
+
+    private async Task SaveProject()
+    {
+        if (string.IsNullOrWhiteSpace(SaveName) || SectionRows is null) return;
+
+        var payload = new RaglanProjectPayload(
+            Input.StitchesPerInch,
+            Input.RowsPerInch,
+            Input.NeckCircumferenceInches,
+            Input.BustCircumferenceInches,
+            Input.UpperArmCircumferenceInches,
+            Input.YokeDepthInches,
+            Colorway.Stripes.Select(s => new StripeDto(s.Color, s.RowCount)).ToList());
+
+        await ProjectStore.SaveAsync(SaveName, "raglan", payload);
+        SavedConfirmation = $"Saved as \"{SaveName}\". Find it under My Projects.";
+        SaveName = "";
     }
 
     private void Calculate()

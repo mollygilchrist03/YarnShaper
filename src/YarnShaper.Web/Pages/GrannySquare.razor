@@ -1,4 +1,6 @@
 @page "/granny-square"
+@inject NavigationManager Nav
+@inject ProjectStore ProjectStore
 
 <PageTitle>Granny Square Calculator</PageTitle>
 
@@ -34,6 +36,18 @@
         <div class="field-group">
             <h2>Colorway</h2>
             <ColorwayPicker @bind-Value="Colorway" @bind-Value:after="RecomputeRowColors" />
+        </div>
+
+        <div class="field-group">
+            <h2>Save</h2>
+            <div class="save-row">
+                <input type="text" placeholder="Project name" @bind="SaveName" @bind:event="oninput" />
+                <button type="button" class="btn-primary" @onclick="SaveProject" disabled="@(string.IsNullOrWhiteSpace(SaveName) || Rows is null)">Save</button>
+            </div>
+            @if (SavedConfirmation is not null)
+            {
+                <p class="save-confirmation">@SavedConfirmation</p>
+            }
         </div>
 
         <button type="submit" class="btn-primary">Calculate</button>
@@ -75,11 +89,40 @@
         new([new Stripe("#7c9c82", 1), new Stripe("#c98a3e", 1)]);
 
     private IReadOnlyDictionary<int, string>? RowColors;
+    private string SaveName = "";
+    private string? SavedConfirmation;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         Editor = new EditContext(Input);
+
+        var loadId = QueryStringHelper.GetParam(Nav.Uri, "load");
+        if (loadId is not null)
+        {
+            var payload = await ProjectStore.LoadPayloadAsync<GrannySquareProjectPayload>(loadId);
+            if (payload is not null)
+            {
+                Input.RoundsPerInch = payload.RoundsPerInch;
+                Input.SideLengthInches = payload.SideLengthInches;
+                Colorway = new StripeSequence(payload.Colorway.Select(s => new Stripe(s.Color, s.RowCount)).ToList());
+            }
+        }
+
         Calculate();
+    }
+
+    private async Task SaveProject()
+    {
+        if (string.IsNullOrWhiteSpace(SaveName) || Rows is null) return;
+
+        var payload = new GrannySquareProjectPayload(
+            Input.RoundsPerInch,
+            Input.SideLengthInches,
+            Colorway.Stripes.Select(s => new StripeDto(s.Color, s.RowCount)).ToList());
+
+        await ProjectStore.SaveAsync(SaveName, "granny-square", payload);
+        SavedConfirmation = $"Saved as \"{SaveName}\". Find it under My Projects.";
+        SaveName = "";
     }
 
     private void Calculate()

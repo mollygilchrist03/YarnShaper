@@ -1,0 +1,66 @@
+@page "/my-projects"
+@inject ProjectStore ProjectStore
+
+<PageTitle>My Projects</PageTitle>
+
+<h1>My Projects</h1>
+<p>Projects you've saved from a calculator, stored locally in this browser.</p>
+
+@if (Entries is null)
+{
+    <p>Loading&hellip;</p>
+}
+else if (Entries.Count == 0)
+{
+    <p>Nothing saved yet. Open a calculator, set it up the way you want, and use the Save section to keep it here.</p>
+}
+else
+{
+    <ul class="project-list">
+        @foreach (var entry in Entries)
+        {
+            <li class="card project-item">
+                <div class="project-item-info">
+                    <span class="badge badge-ready">@KindLabel(entry.CalculatorKind)</span>
+                    <h3>@entry.Name</h3>
+                    <p class="project-item-date">Saved @entry.SavedAtUtc.ToLocalTime().ToString("MMM d, yyyy 'at' h:mm tt")</p>
+                </div>
+                <div class="project-item-actions">
+                    <a class="btn-primary" href="@(KindRoute(entry.CalculatorKind) + "?load=" + entry.Id)">Open</a>
+                    <button type="button" class="btn-link project-delete" @onclick="() => Delete(entry.Id)"><Icon Name="x-lg" /> Delete</button>
+                </div>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private List<ProjectIndexEntry>? Entries;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Entries = await ProjectStore.ListAsync();
+    }
+
+    private async Task Delete(string id)
+    {
+        await ProjectStore.DeleteAsync(id);
+        Entries = await ProjectStore.ListAsync();
+    }
+
+    private static string KindLabel(string kind) => kind switch
+    {
+        "raglan" => "Raglan Yoke",
+        "sock-heel" => "Sock Heel",
+        "granny-square" => "Granny Square",
+        _ => kind,
+    };
+
+    private static string KindRoute(string kind) => kind switch
+    {
+        "raglan" => "raglan",
+        "sock-heel" => "sock-heel",
+        "granny-square" => "granny-square",
+        _ => "",
+    };
+}
