@@ -105,4 +105,55 @@ public class SockHeelShapingCalculatorTests
         Assert.Throws<ArgumentException>(() =>
             SockHeelShapingCalculator.Calculate(tinyGauge, new SockHeelMeasurements(FootCircumferenceInches: 1)));
     }
+
+    [Fact]
+    public void ShortRowHeelStartsAndEndsAtHeelStitchCount()
+    {
+        // 8in foot at 5.5 sts/in -> 48 total, 24 heel sts.
+        var rows = SockHeelShapingCalculator.Calculate(WorstedGauge, new SockHeelMeasurements(8), HeelStyle.ShortRowHeel);
+
+        var heel = rows.Where(r => r.Section == GarmentSection.ShortRowHeel).OrderBy(r => r.RowNumber).ToList();
+        Assert.Equal(24, heel[0].StitchCount);
+        Assert.Equal(ShapingAction.None, heel[0].Action);
+        Assert.Equal(24, heel[^1].StitchCount);
+    }
+
+    [Fact]
+    public void ShortRowHeelNarrowsToHalfThenWidensBackOut()
+    {
+        var rows = SockHeelShapingCalculator.Calculate(WorstedGauge, new SockHeelMeasurements(8), HeelStyle.ShortRowHeel);
+
+        var heel = rows.Where(r => r.Section == GarmentSection.ShortRowHeel).OrderBy(r => r.RowNumber).ToList();
+        var minStitches = heel.Min(r => r.StitchCount);
+
+        Assert.Equal(12, minStitches); // heelStitches (24) / 2
+        Assert.Contains(heel, r => r.Action == ShapingAction.Decrease);
+        Assert.Contains(heel, r => r.Action == ShapingAction.Increase);
+    }
+
+    [Fact]
+    public void AfterthoughtHeelStartsAtFullRoundAndDecreasesToAPoint()
+    {
+        // 8in foot at 5.5 sts/in -> 48 total sts picked up around the opening.
+        var rows = SockHeelShapingCalculator.Calculate(WorstedGauge, new SockHeelMeasurements(8), HeelStyle.AfterthoughtHeel);
+
+        var heel = rows.Where(r => r.Section == GarmentSection.AfterthoughtHeel).OrderBy(r => r.RowNumber).ToList();
+        Assert.Equal(48, heel[0].StitchCount);
+        Assert.Equal(ShapingAction.None, heel[0].Action);
+        Assert.True(heel[^1].StitchCount < heel[0].StitchCount);
+        Assert.True(heel[^1].StitchCount >= 8);
+    }
+
+    [Fact]
+    public void AfterthoughtHeelEveryDecreaseRoundRemovesExactlyFourStitches()
+    {
+        var rows = SockHeelShapingCalculator.Calculate(WorstedGauge, new SockHeelMeasurements(8), HeelStyle.AfterthoughtHeel);
+
+        var heel = rows.Where(r => r.Section == GarmentSection.AfterthoughtHeel).OrderBy(r => r.RowNumber).ToList();
+        for (var i = 1; i < heel.Count; i++)
+        {
+            var delta = heel[i].StitchCount - heel[i - 1].StitchCount;
+            Assert.Equal(heel[i].Action == ShapingAction.Decrease ? -4 : 0, delta);
+        }
+    }
 }

@@ -20,7 +20,9 @@ public enum GarmentSection
     Round,
     HeelFlap,
     HeelTurn,
-    Gusset
+    Gusset,
+    ShortRowHeel,
+    AfterthoughtHeel
 }
 
 /// <summary>

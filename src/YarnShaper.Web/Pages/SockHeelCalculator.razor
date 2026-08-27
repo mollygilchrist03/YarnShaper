@@ -6,7 +6,7 @@
 <PageTitle>Sock Heel Calculator</PageTitle>
 
 <h1>Sock Heel Calculator</h1>
-<p>Enter a gauge swatch and foot circumference to generate the flap, short-row turn, and gusset shaping for a standard sock heel.</p>
+<p>Enter a gauge swatch and foot circumference to generate the shaping for a heel-flap-and-gusset, short-row, or afterthought heel.</p>
 
 <div class="calculator-layout">
     <EditForm EditContext="@Editor" OnValidSubmit="Calculate" class="card form-card">
@@ -24,6 +24,20 @@
                     Rows / inch
                     <InputNumber @bind-Value="Input.RowsPerInch" @bind-Value:after="Calculate" step="0.1" />
                     <ValidationMessage For="@(() => Input.RowsPerInch)" />
+                </label>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <h2>Construction</h2>
+            <div class="form-grid">
+                <label>
+                    Heel style
+                    <InputSelect @bind-Value="Style" @bind-Value:after="Calculate">
+                        <option value="@HeelStyle.HeelFlapAndGusset">Heel flap and gusset</option>
+                        <option value="@HeelStyle.ShortRowHeel">Short-row heel</option>
+                        <option value="@HeelStyle.AfterthoughtHeel">Afterthought heel</option>
+                    </InputSelect>
                 </label>
             </div>
         </div>
@@ -78,23 +92,24 @@
 
             <div class="summary-stats">
                 <div class="summary-stat">
-                    <span class="value"><CountUp Value="@HeelStitches" /></span>
-                    <span class="label">Heel stitches</span>
+                    <span class="value"><CountUp Value="@Stat1Value" /></span>
+                    <span class="label">@Stat1Label</span>
                 </div>
                 <div class="summary-stat">
-                    <span class="value"><CountUp Value="@TurnStitches" /></span>
-                    <span class="label">Stitches after turn</span>
+                    <span class="value"><CountUp Value="@Stat2Value" /></span>
+                    <span class="label">@Stat2Label</span>
                 </div>
                 <div class="summary-stat">
-                    <span class="value"><CountUp Value="@GussetPeakStitches" /></span>
-                    <span class="label">Gusset peak stitches</span>
+                    <span class="value"><CountUp Value="@Stat3Value" /></span>
+                    <span class="label">@Stat3Label</span>
                 </div>
             </div>
 
             <div class="schematic-row">
-                <SchematicRenderer Label="Heel flap" Rows="@SectionRows[GarmentSection.HeelFlap]" ColorSelector="@ColorSelectorFor(0)" />
-                <SchematicRenderer Label="Heel turn" Rows="@SectionRows[GarmentSection.HeelTurn]" ColorSelector="@ColorSelectorFor(FlapRowCount)" />
-                <SchematicRenderer Label="Gusset" Rows="@SectionRows[GarmentSection.Gusset]" ColorSelector="@ColorSelectorFor(FlapRowCount + TurnRowCount)" />
+                @foreach (var section in PhaseOrder)
+                {
+                    <SchematicRenderer Label="@LabelFor(section)" Rows="@SectionRows[section]" ColorSelector="@ColorSelectorFor(section)" />
+                }
             </div>
 
             <YardageBreakdown YardageByColor="@(YardageByColor ?? new Dictionary<string, double>())" />
@@ -104,15 +119,20 @@
 
 @code {
     private SockHeelInput Input { get; set; } = new();
+    private HeelStyle Style { get; set; } = HeelStyle.HeelFlapAndGusset;
     private EditContext Editor { get; set; } = null!;
     private string? ErrorMessage;
     private Dictionary<GarmentSection, List<ShapingRow>>? SectionRows;
-    private int HeelStitches;
-    private int TurnStitches;
-    private int GussetPeakStitches;
-    private int FlapRowCount;
-    private int TurnRowCount;
-    private int GussetRowCount;
+    private List<GarmentSection> PhaseOrder = [];
+    private Dictionary<GarmentSection, int> PhaseOffsets = [];
+    private int TotalHeelRows;
+
+    private int Stat1Value;
+    private string Stat1Label = "";
+    private int Stat2Value;
+    private string Stat2Label = "";
+    private int Stat3Value;
+    private string Stat3Label = "";
 
     private StripeSequence Colorway { get; set; } =
         new([new Stripe("#7c9c82", 4), new Stripe("#c98a3e", 2)]);
@@ -152,6 +172,7 @@
         Input.StitchesPerInch = payload.StitchesPerInch;
         Input.RowsPerInch = payload.RowsPerInch;
         Input.FootCircumferenceInches = payload.FootCircumferenceInches;
+        Style = payload.Style;
         Colorway = new StripeSequence(payload.Colorway.Select(s => new Stripe(s.Color, s.RowCount)).ToList());
     }
 
@@ -159,6 +180,7 @@
         Input.StitchesPerInch,
         Input.RowsPerInch,
         Input.FootCircumferenceInches,
+        Style,
         Colorway.Stripes.Select(s => new StripeDto(s.Color, s.RowCount)).ToList());
 
     private async Task SaveProject()
@@ -205,21 +227,29 @@
             var gauge = new Gauge(Input.StitchesPerInch, Input.RowsPerInch);
             var measurements = new SockHeelMeasurements(Input.FootCircumferenceInches);
 
-            var rows = SockHeelShapingCalculator.Calculate(gauge, measurements);
+            var rows = SockHeelShapingCalculator.Calculate(gauge, measurements, Style);
             SectionRows = rows
                 .GroupBy(r => r.Section)
                 .ToDictionary(g => g.Key, g => g.OrderBy(r => r.RowNumber).ToList());
 
-            var flap = SectionRows[GarmentSection.HeelFlap];
-            var turn = SectionRows[GarmentSection.HeelTurn];
-            var gusset = SectionRows[GarmentSection.Gusset];
+            PhaseOrder = Style switch
+            {
+                HeelStyle.HeelFlapAndGusset => [GarmentSection.HeelFlap, GarmentSection.HeelTurn, GarmentSection.Gusset],
+                HeelStyle.ShortRowHeel => [GarmentSection.ShortRowHeel],
+                HeelStyle.AfterthoughtHeel => [GarmentSection.AfterthoughtHeel],
+                _ => [],
+            };
 
-            HeelStitches = flap[0].StitchCount;
-            TurnStitches = turn[^1].StitchCount;
-            GussetPeakStitches = gusset[0].StitchCount;
-            FlapRowCount = flap.Count;
-            TurnRowCount = turn.Count;
-            GussetRowCount = gusset.Count;
+            PhaseOffsets = [];
+            var offset = 0;
+            foreach (var section in PhaseOrder)
+            {
+                PhaseOffsets[section] = offset;
+                offset += SectionRows[section].Count;
+            }
+
+            TotalHeelRows = offset;
+            SetSummaryStats();
             CurrentGauge = gauge;
             RecomputeRowColors();
         }
@@ -232,10 +262,41 @@
         }
     }
 
+    private void SetSummaryStats()
+    {
+        if (SectionRows is null) return;
+
+        switch (Style)
+        {
+            case HeelStyle.HeelFlapAndGusset:
+                var flap = SectionRows[GarmentSection.HeelFlap];
+                var turn = SectionRows[GarmentSection.HeelTurn];
+                var gusset = SectionRows[GarmentSection.Gusset];
+                (Stat1Value, Stat1Label) = (flap[0].StitchCount, "Heel stitches");
+                (Stat2Value, Stat2Label) = (turn[^1].StitchCount, "Stitches after turn");
+                (Stat3Value, Stat3Label) = (gusset[0].StitchCount, "Gusset peak stitches");
+                break;
+
+            case HeelStyle.ShortRowHeel:
+                var shortRowHeel = SectionRows[GarmentSection.ShortRowHeel];
+                (Stat1Value, Stat1Label) = (shortRowHeel[0].StitchCount, "Heel stitches");
+                (Stat2Value, Stat2Label) = (shortRowHeel.Min(r => r.StitchCount), "Stitches at center");
+                (Stat3Value, Stat3Label) = (shortRowHeel.Count, "Heel rows");
+                break;
+
+            case HeelStyle.AfterthoughtHeel:
+                var afterthoughtHeel = SectionRows[GarmentSection.AfterthoughtHeel];
+                (Stat1Value, Stat1Label) = (afterthoughtHeel[0].StitchCount, "Stitches picked up");
+                (Stat2Value, Stat2Label) = (afterthoughtHeel.Count(r => r.Action == ShapingAction.Decrease), "Decrease rounds");
+                (Stat3Value, Stat3Label) = (afterthoughtHeel[^1].StitchCount, "Stitches at closure");
+                break;
+        }
+    }
+
     private void RecomputeRowColors()
     {
         if (SectionRows is null) return;
-        RowColors = ColorwayMapper.MapRowColors(FlapRowCount + TurnRowCount + GussetRowCount, Colorway);
+        RowColors = ColorwayMapper.MapRowColors(TotalHeelRows, Colorway);
         RecomputeYardage();
     }
 
@@ -243,20 +304,30 @@
     {
         if (SectionRows is null || CurrentGauge is null) return;
 
-        var coloredRows = SectionRows[GarmentSection.HeelFlap].Select(r => (r.StitchCount, ColorSelectorFor(0)(r)))
-            .Concat(SectionRows[GarmentSection.HeelTurn].Select(r => (r.StitchCount, ColorSelectorFor(FlapRowCount)(r))))
-            .Concat(SectionRows[GarmentSection.Gusset].Select(r => (r.StitchCount, ColorSelectorFor(FlapRowCount + TurnRowCount)(r))));
+        var coloredRows = PhaseOrder.SelectMany(section =>
+            SectionRows[section].Select(r => (r.StitchCount, ColorSelectorFor(section)(r))));
 
         YardageByColor = YardageEstimator.EstimateYardageByColor(coloredRows, CurrentGauge);
     }
 
-    // Heel flap, turn, and gusset are sequential phases of the same
-    // physical construction, so one continuous stripe sequence should flow
-    // across all three even though each section's ShapingRow.RowNumber
-    // restarts at 1. This maps a section's local row number back onto the
-    // shared global sequence before looking up its color.
-    private Func<ShapingRow, string> ColorSelectorFor(int sectionOffset) =>
-        row => RowColors?.GetValueOrDefault(row.RowNumber + sectionOffset) ?? "#7c9c82";
+    // A heel style's phases (e.g. flap, turn, gusset) are sequential parts
+    // of the same physical construction, so one continuous stripe sequence
+    // should flow across all of them even though each section's
+    // ShapingRow.RowNumber restarts at 1. This maps a section's local row
+    // number back onto the shared global sequence before looking up its
+    // color.
+    private Func<ShapingRow, string> ColorSelectorFor(GarmentSection section) =>
+        row => RowColors?.GetValueOrDefault(row.RowNumber + PhaseOffsets.GetValueOrDefault(section)) ?? "#7c9c82";
+
+    private static string LabelFor(GarmentSection section) => section switch
+    {
+        GarmentSection.HeelFlap => "Heel flap",
+        GarmentSection.HeelTurn => "Heel turn",
+        GarmentSection.Gusset => "Gusset",
+        GarmentSection.ShortRowHeel => "Short-row heel",
+        GarmentSection.AfterthoughtHeel => "Afterthought heel",
+        _ => section.ToString(),
+    };
 
     private sealed class SockHeelInput
     {

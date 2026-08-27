@@ -23,6 +23,7 @@ public sealed record SockHeelProjectPayload(
     double StitchesPerInch,
     double RowsPerInch,
     double FootCircumferenceInches,
+    HeelStyle Style,
     List<StripeDto> Colorway);
 
 public sealed record GrannySquareProjectPayload(
