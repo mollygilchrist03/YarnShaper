@@ -69,4 +69,27 @@ public class GrannySquareRoundsCalculatorTests
         Assert.Throws<ArgumentException>(() =>
             GrannySquareRoundsCalculator.Calculate(coarseGauge, new GrannySquareMeasurements(SideLengthInches: 1)));
     }
+
+    [Theory]
+    [InlineData(3)]
+    [InlineData(6)]
+    [InlineData(8)]
+    public void EachRoundHasExactlyCornerCountTimesItsRoundNumberClusters(int cornerCount)
+    {
+        var rows = GrannySquareRoundsCalculator.Calculate(WorstedGauge, new GrannySquareMeasurements(4), cornerCount);
+
+        var ordered = rows.OrderBy(r => r.RowNumber).ToList();
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            var round = i + 1;
+            Assert.Equal(cornerCount * round, ordered[i].StitchCount);
+        }
+    }
+
+    [Fact]
+    public void ThrowsWhenCornerCountIsBelowThree()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            GrannySquareRoundsCalculator.Calculate(WorstedGauge, new GrannySquareMeasurements(4), cornerCount: 2));
+    }
 }

@@ -29,6 +29,7 @@ public sealed record SockHeelProjectPayload(
 public sealed record GrannySquareProjectPayload(
     double RoundsPerInch,
     double SideLengthInches,
+    int CornerCount,
     List<StripeDto> Colorway);
 
 // Blazor WebAssembly publishes with IL trimming on, which can silently drop

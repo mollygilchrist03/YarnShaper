@@ -6,7 +6,7 @@
 <PageTitle>Granny Square Calculator</PageTitle>
 
 <h1>Granny Square Calculator</h1>
-<p>Enter a gauge (rounds per inch of growth) and a target side length to generate the round-by-round cluster count for a classic granny square.</p>
+<p>Enter a gauge (rounds per inch of growth), a target side length, and a corner count to generate the round-by-round cluster count for a granny motif — 4 for the classic square, or any other count for a hexagon, triangle, and so on.</p>
 
 <div class="calculator-layout">
     <EditForm EditContext="@Editor" OnValidSubmit="Calculate" class="card form-card">
@@ -31,7 +31,13 @@
                     <InputNumber @bind-Value="Input.SideLengthInches" @bind-Value:after="Calculate" step="0.25" />
                     <ValidationMessage For="@(() => Input.SideLengthInches)" />
                 </label>
+                <label>
+                    Corners
+                    <InputNumber @bind-Value="Input.CornerCount" @bind-Value:after="Calculate" step="1" />
+                    <ValidationMessage For="@(() => Input.CornerCount)" />
+                </label>
             </div>
+            <p class="field-hint">4 for a classic granny square, 6 for a granny hexagon, 3 for a triangle motif, and so on.</p>
         </div>
 
         <div class="field-group">
@@ -83,7 +89,7 @@
             </div>
 
             <div class="schematic-row">
-                <SchematicRenderer Label="Granny square" Rows="@Rows" ColorSelector="ColorForRow" />
+                <SchematicRenderer Label="@MotifLabel" Rows="@Rows" ColorSelector="ColorForRow" />
             </div>
         }
     </div>
@@ -102,6 +108,16 @@
     private string SaveName = "";
     private string? SavedConfirmation;
     private string? ShareConfirmation;
+
+    private string MotifLabel => Input.CornerCount switch
+    {
+        3 => "Granny triangle",
+        4 => "Granny square",
+        5 => "Granny pentagon",
+        6 => "Granny hexagon",
+        8 => "Granny octagon",
+        _ => $"Granny motif ({Input.CornerCount} corners)",
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -130,12 +146,14 @@
 
         Input.RoundsPerInch = payload.RoundsPerInch;
         Input.SideLengthInches = payload.SideLengthInches;
+        Input.CornerCount = payload.CornerCount;
         Colorway = new StripeSequence(payload.Colorway.Select(s => new Stripe(s.Color, s.RowCount)).ToList());
     }
 
     private GrannySquareProjectPayload BuildPayload() => new(
         Input.RoundsPerInch,
         Input.SideLengthInches,
+        Input.CornerCount,
         Colorway.Stripes.Select(s => new StripeDto(s.Color, s.RowCount)).ToList());
 
     private async Task SaveProject()
@@ -181,7 +199,7 @@
             var gauge = new Gauge(StitchesPerInch: 1, RowsPerInch: Input.RoundsPerInch);
             var measurements = new GrannySquareMeasurements(Input.SideLengthInches);
 
-            Rows = GrannySquareRoundsCalculator.Calculate(gauge, measurements).OrderBy(r => r.RowNumber).ToList();
+            Rows = GrannySquareRoundsCalculator.Calculate(gauge, measurements, Input.CornerCount).OrderBy(r => r.RowNumber).ToList();
             RecomputeRowColors();
         }
         catch (ArgumentException ex)
@@ -208,5 +226,8 @@
 
         [Range(0.1, 100, ErrorMessage = "Enter a side length greater than 0.")]
         public double SideLengthInches { get; set; } = 6;
+
+        [Range(3, 12, ErrorMessage = "Enter a corner count between 3 and 12.")]
+        public int CornerCount { get; set; } = 4;
     }
 }
