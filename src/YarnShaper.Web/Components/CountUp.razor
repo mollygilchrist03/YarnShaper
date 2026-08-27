@@ -1,0 +1,51 @@
+@namespace YarnShaper.Web.Components
+
+<span>@Displayed.ToString("N0", CultureInfo.InvariantCulture)</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public int Value { get; set; }
+
+    private int Displayed;
+    private int? lastTarget;
+    private CancellationTokenSource? cts;
+
+    protected override void OnParametersSet()
+    {
+        if (lastTarget == Value) return;
+
+        var from = lastTarget is null ? 0 : Displayed;
+        lastTarget = Value;
+        Animate(from, Value);
+    }
+
+    private void Animate(int from, int to)
+    {
+        cts?.Cancel();
+        cts = new CancellationTokenSource();
+        _ = RunAnimation(from, to, cts.Token);
+    }
+
+    // Eased tween run entirely in C# via a delay loop, rather than JS
+    // interop, so this stays in step with the rest of the app's
+    // client-side-only Blazor approach.
+    private async Task RunAnimation(int from, int to, CancellationToken token)
+    {
+        const int steps = 16;
+        const int stepDelayMs = 26;
+        try
+        {
+            for (var i = 1; i <= steps; i++)
+            {
+                await Task.Delay(stepDelayMs, token);
+                var t = i / (double)steps;
+                var eased = 1 - Math.Pow(1 - t, 3);
+                Displayed = (int)Math.Round(from + (to - from) * eased);
+                StateHasChanged();
+            }
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+}

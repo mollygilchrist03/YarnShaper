@@ -47,11 +47,11 @@
         {
             <div class="summary-stats">
                 <div class="summary-stat">
-                    <span class="value">@Rows.Count</span>
+                    <span class="value"><CountUp Value="@Rows.Count" /></span>
                     <span class="label">Total rounds</span>
                 </div>
                 <div class="summary-stat">
-                    <span class="value">@Rows[^1].StitchCount</span>
+                    <span class="value"><CountUp Value="@Rows[^1].StitchCount" /></span>
                     <span class="label">Clusters in final round</span>
                 </div>
             </div>
