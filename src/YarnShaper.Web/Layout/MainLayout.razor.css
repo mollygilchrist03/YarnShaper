@@ -9,11 +9,13 @@ main {
 }
 
 .sidebar {
-    background: var(--color-ink);
+    background: linear-gradient(165deg, #322921 0%, var(--color-ink) 55%, #221b16 100%);
 }
 
 .top-row {
-    background-color: var(--color-cream);
+    background-color: rgba(250, 246, 239, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--color-border);
     justify-content: flex-end;
     height: 3.5rem;
@@ -28,6 +30,7 @@ main {
         font-size: 0.9rem;
         font-weight: 600;
         color: var(--color-sage-dark);
+        transition: color 0.15s ease;
     }
 
     .top-row ::deep a .icon {

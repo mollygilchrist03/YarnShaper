@@ -28,7 +28,11 @@ html, body {
     margin: 0;
     font-family: var(--font-body);
     color: var(--color-ink);
-    background: var(--color-cream);
+    background:
+        radial-gradient(48rem 30rem at 100% -8%, rgba(184, 92, 58, 0.07), transparent 60%),
+        radial-gradient(40rem 26rem at -10% 12%, rgba(95, 127, 101, 0.08), transparent 55%),
+        var(--color-cream);
+    background-attachment: fixed;
     overflow-x: hidden;
 }
 
@@ -131,16 +135,23 @@ code {
     font: inherit;
     font-weight: 600;
     color: #fff;
-    background-color: var(--color-sage);
+    background: linear-gradient(155deg, var(--color-sage) 0%, var(--color-sage-dark) 100%);
     border: 1px solid var(--color-sage-dark);
     border-radius: 8px;
     padding: 0.6rem 1.4rem;
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    box-shadow: 0 1px 2px rgba(42, 35, 29, 0.08);
+    transition: transform 0.18s var(--ease-out), box-shadow 0.18s var(--ease-out), background-color 0.15s ease;
 }
 
     .btn-primary:hover {
-        background-color: var(--color-sage-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(69, 96, 74, 0.28);
+    }
+
+    .btn-primary:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 2px rgba(42, 35, 29, 0.12);
     }
 
 .btn-link {
@@ -150,6 +161,7 @@ code {
     text-decoration: none;
     border-bottom: 2px solid var(--color-sage);
     padding-bottom: 1px;
+    transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 .btn-link .icon {
@@ -173,6 +185,7 @@ input[type="number"], input[type="text"] {
     color: var(--color-ink);
     width: 100%;
     min-width: 0;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
     input[type="number"]:focus, input[type="text"]:focus {
@@ -201,12 +214,15 @@ input[type="number"], input[type="text"] {
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
     box-shadow: var(--shadow-card);
+    transition: box-shadow 0.25s var(--ease-out), transform 0.25s var(--ease-out), border-color 0.25s ease;
 }
 
 /* Badges */
 
 .badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -219,6 +235,15 @@ input[type="number"], input[type="text"] {
     background: var(--color-sage-tint);
     color: var(--color-sage-dark);
 }
+
+    .badge-ready::before {
+        content: "";
+        width: 0.4rem;
+        height: 0.4rem;
+        border-radius: 50%;
+        background: var(--color-sage);
+        animation: pulseDot 2.4s ease-in-out infinite;
+    }
 
 .badge-soon {
     background: var(--color-cream-deep);
@@ -369,10 +394,34 @@ input[type="number"], input[type="text"] {
     .stripe-row input[type="color"] {
         width: 2.2rem;
         height: 2.2rem;
-        padding: 0.2rem;
+        padding: 0;
+        border: 2px solid var(--color-card);
+        border-radius: 50%;
+        overflow: hidden;
         flex-shrink: 0;
         cursor: pointer;
+        box-shadow: 0 0 0 1px var(--color-border);
+        transition: transform 0.15s var(--ease-out), box-shadow 0.15s ease;
     }
+
+        .stripe-row input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .stripe-row input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 50%;
+        }
+
+        .stripe-row input[type="color"]::-moz-color-swatch {
+            border: none;
+            border-radius: 50%;
+        }
+
+        .stripe-row input[type="color"]:hover {
+            transform: scale(1.12);
+            box-shadow: 0 0 0 1px var(--color-sage);
+        }
 
     .stripe-row input[type="number"] {
         width: 4rem;
@@ -460,10 +509,15 @@ input[type="number"], input[type="text"] {
         padding: 0.6rem 1rem;
         border-bottom: 1px solid var(--color-border);
         font-size: 0.9rem;
+        transition: background-color 0.15s ease;
     }
 
     .yardage-list li:last-child {
         border-bottom: none;
+    }
+
+    .yardage-list li:not(.yardage-total):hover {
+        background: var(--color-cream-deep);
     }
 
 .yardage-swatch {
@@ -472,6 +526,11 @@ input[type="number"], input[type="text"] {
     border-radius: 50%;
     border: 1px solid var(--color-border);
     flex-shrink: 0;
+    transition: transform 0.15s var(--ease-out);
+}
+
+.yardage-list li:hover .yardage-swatch {
+    transform: scale(1.25);
 }
 
 .yardage-color {
@@ -525,7 +584,7 @@ input[type="number"], input[type="text"] {
     gap: 1.5rem;
     margin-bottom: 1.75rem;
     padding: 1rem 1.25rem;
-    background: var(--color-sage-tint);
+    background: linear-gradient(135deg, var(--color-sage-tint) 0%, var(--color-cream-deep) 100%);
     border-radius: var(--radius);
     animation: fadeInUp 0.4s var(--ease-out) both;
 }
