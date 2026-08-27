@@ -1,6 +1,7 @@
 @page "/granny-square"
 @inject NavigationManager Nav
 @inject ProjectStore ProjectStore
+@inject IJSRuntime JS
 
 <PageTitle>Granny Square Calculator</PageTitle>
 
@@ -48,6 +49,11 @@
             {
                 <p class="save-confirmation">@SavedConfirmation</p>
             }
+            <button type="button" class="btn-link share-link" @onclick="CopyShareLink" disabled="@(Rows is null)">Copy shareable link</button>
+            @if (ShareConfirmation is not null)
+            {
+                <p class="save-confirmation">@ShareConfirmation</p>
+            }
         </div>
 
         <button type="submit" class="btn-primary">Calculate</button>
@@ -91,6 +97,7 @@
     private IReadOnlyDictionary<int, string>? RowColors;
     private string SaveName = "";
     private string? SavedConfirmation;
+    private string? ShareConfirmation;
 
     protected override async Task OnInitializedAsync()
     {
@@ -99,30 +106,57 @@
         var loadId = QueryStringHelper.GetParam(Nav.Uri, "load");
         if (loadId is not null)
         {
-            var payload = await ProjectStore.LoadPayloadAsync<GrannySquareProjectPayload>(loadId);
-            if (payload is not null)
+            ApplyPayload(await ProjectStore.LoadPayloadAsync<GrannySquareProjectPayload>(loadId));
+        }
+        else
+        {
+            var shared = QueryStringHelper.GetParam(Nav.Uri, "s");
+            if (shared is not null)
             {
-                Input.RoundsPerInch = payload.RoundsPerInch;
-                Input.SideLengthInches = payload.SideLengthInches;
-                Colorway = new StripeSequence(payload.Colorway.Select(s => new Stripe(s.Color, s.RowCount)).ToList());
+                ApplyPayload(ShareLink.Decode<GrannySquareProjectPayload>(shared));
             }
         }
 
         Calculate();
     }
 
+    private void ApplyPayload(GrannySquareProjectPayload? payload)
+    {
+        if (payload is null) return;
+
+        Input.RoundsPerInch = payload.RoundsPerInch;
+        Input.SideLengthInches = payload.SideLengthInches;
+        Colorway = new StripeSequence(payload.Colorway.Select(s => new Stripe(s.Color, s.RowCount)).ToList());
+    }
+
+    private GrannySquareProjectPayload BuildPayload() => new(
+        Input.RoundsPerInch,
+        Input.SideLengthInches,
+        Colorway.Stripes.Select(s => new StripeDto(s.Color, s.RowCount)).ToList());
+
     private async Task SaveProject()
     {
         if (string.IsNullOrWhiteSpace(SaveName) || Rows is null) return;
 
-        var payload = new GrannySquareProjectPayload(
-            Input.RoundsPerInch,
-            Input.SideLengthInches,
-            Colorway.Stripes.Select(s => new StripeDto(s.Color, s.RowCount)).ToList());
-
-        await ProjectStore.SaveAsync(SaveName, "granny-square", payload);
+        await ProjectStore.SaveAsync(SaveName, "granny-square", BuildPayload());
         SavedConfirmation = $"Saved as \"{SaveName}\". Find it under My Projects.";
         SaveName = "";
+    }
+
+    private async Task CopyShareLink()
+    {
+        if (Rows is null) return;
+
+        var url = Nav.ToAbsoluteUri($"granny-square?s={ShareLink.Encode(BuildPayload())}").ToString();
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", url);
+            ShareConfirmation = "Link copied to clipboard.";
+        }
+        catch (JSException)
+        {
+            ShareConfirmation = url;
+        }
     }
 
     private void Calculate()

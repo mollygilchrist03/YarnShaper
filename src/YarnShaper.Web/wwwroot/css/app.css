@@ -417,7 +417,19 @@ input[type="number"], input[type="text"] {
     margin: 0.6rem 0 0;
     font-size: 0.85rem;
     color: var(--color-sage-dark);
+    word-break: break-all;
 }
+
+.share-link {
+    display: inline-block;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+}
+
+    .share-link:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
 
 .project-list {
     list-style: none;

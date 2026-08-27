@@ -1,6 +1,7 @@
 @page "/raglan"
 @inject NavigationManager Nav
 @inject ProjectStore ProjectStore
+@inject IJSRuntime JS
 
 <PageTitle>Raglan Calculator</PageTitle>
 
@@ -68,6 +69,11 @@
             {
                 <p class="save-confirmation">@SavedConfirmation</p>
             }
+            <button type="button" class="btn-link share-link" @onclick="CopyShareLink" disabled="@(SectionRows is null)">Copy shareable link</button>
+            @if (ShareConfirmation is not null)
+            {
+                <p class="save-confirmation">@ShareConfirmation</p>
+            }
         </div>
 
         <button type="submit" class="btn-primary">Calculate</button>
@@ -125,6 +131,7 @@
     private Gauge? CurrentGauge;
     private string SaveName = "";
     private string? SavedConfirmation;
+    private string? ShareConfirmation;
 
     protected override async Task OnInitializedAsync()
     {
@@ -133,38 +140,65 @@
         var loadId = QueryStringHelper.GetParam(Nav.Uri, "load");
         if (loadId is not null)
         {
-            var payload = await ProjectStore.LoadPayloadAsync<RaglanProjectPayload>(loadId);
-            if (payload is not null)
+            ApplyPayload(await ProjectStore.LoadPayloadAsync<RaglanProjectPayload>(loadId));
+        }
+        else
+        {
+            var shared = QueryStringHelper.GetParam(Nav.Uri, "s");
+            if (shared is not null)
             {
-                Input.StitchesPerInch = payload.StitchesPerInch;
-                Input.RowsPerInch = payload.RowsPerInch;
-                Input.NeckCircumferenceInches = payload.NeckCircumferenceInches;
-                Input.BustCircumferenceInches = payload.BustCircumferenceInches;
-                Input.UpperArmCircumferenceInches = payload.UpperArmCircumferenceInches;
-                Input.YokeDepthInches = payload.YokeDepthInches;
-                Colorway = new StripeSequence(payload.Colorway.Select(s => new Stripe(s.Color, s.RowCount)).ToList());
+                ApplyPayload(ShareLink.Decode<RaglanProjectPayload>(shared));
             }
         }
 
         Calculate();
     }
 
+    private void ApplyPayload(RaglanProjectPayload? payload)
+    {
+        if (payload is null) return;
+
+        Input.StitchesPerInch = payload.StitchesPerInch;
+        Input.RowsPerInch = payload.RowsPerInch;
+        Input.NeckCircumferenceInches = payload.NeckCircumferenceInches;
+        Input.BustCircumferenceInches = payload.BustCircumferenceInches;
+        Input.UpperArmCircumferenceInches = payload.UpperArmCircumferenceInches;
+        Input.YokeDepthInches = payload.YokeDepthInches;
+        Colorway = new StripeSequence(payload.Colorway.Select(s => new Stripe(s.Color, s.RowCount)).ToList());
+    }
+
+    private RaglanProjectPayload BuildPayload() => new(
+        Input.StitchesPerInch,
+        Input.RowsPerInch,
+        Input.NeckCircumferenceInches,
+        Input.BustCircumferenceInches,
+        Input.UpperArmCircumferenceInches,
+        Input.YokeDepthInches,
+        Colorway.Stripes.Select(s => new StripeDto(s.Color, s.RowCount)).ToList());
+
     private async Task SaveProject()
     {
         if (string.IsNullOrWhiteSpace(SaveName) || SectionRows is null) return;
 
-        var payload = new RaglanProjectPayload(
-            Input.StitchesPerInch,
-            Input.RowsPerInch,
-            Input.NeckCircumferenceInches,
-            Input.BustCircumferenceInches,
-            Input.UpperArmCircumferenceInches,
-            Input.YokeDepthInches,
-            Colorway.Stripes.Select(s => new StripeDto(s.Color, s.RowCount)).ToList());
-
-        await ProjectStore.SaveAsync(SaveName, "raglan", payload);
+        await ProjectStore.SaveAsync(SaveName, "raglan", BuildPayload());
         SavedConfirmation = $"Saved as \"{SaveName}\". Find it under My Projects.";
         SaveName = "";
+    }
+
+    private async Task CopyShareLink()
+    {
+        if (SectionRows is null) return;
+
+        var url = Nav.ToAbsoluteUri($"raglan?s={ShareLink.Encode(BuildPayload())}").ToString();
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", url);
+            ShareConfirmation = "Link copied to clipboard.";
+        }
+        catch (JSException)
+        {
+            ShareConfirmation = url;
+        }
     }
 
     private void Calculate()
