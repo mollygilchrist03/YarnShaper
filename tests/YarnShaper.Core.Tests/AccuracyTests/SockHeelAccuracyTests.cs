@@ -51,7 +51,8 @@ public class SockHeelAccuracyTests
     {
         var actual = CalculateFixtureRows().Where(r => r.Section == GarmentSection.Gusset).ToList();
 
-        const int patternPeakStitches = 40; // 14 (heel turn) + 24 (pickup) + 2 (ladder stitches)
+        // 14 (heel turn) + 24 (pickup) + 2 (ladder stitches).
+        const int patternPeakStitches = 40;
         const int patternDecreaseRounds = 8;
 
         var calculatorPeakStitches = actual[0].StitchCount;

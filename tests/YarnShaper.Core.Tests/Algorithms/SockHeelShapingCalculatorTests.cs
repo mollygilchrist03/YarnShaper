@@ -126,7 +126,8 @@ public class SockHeelShapingCalculatorTests
         var heel = rows.Where(r => r.Section == GarmentSection.ShortRowHeel).OrderBy(r => r.RowNumber).ToList();
         var minStitches = heel.Min(r => r.StitchCount);
 
-        Assert.Equal(12, minStitches); // heelStitches (24) / 2
+        // heelStitches (24) / 2.
+        Assert.Equal(12, minStitches);
         Assert.Contains(heel, r => r.Action == ShapingAction.Decrease);
         Assert.Contains(heel, r => r.Action == ShapingAction.Increase);
     }

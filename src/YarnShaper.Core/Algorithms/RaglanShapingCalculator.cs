@@ -76,7 +76,8 @@ public static class RaglanShapingCalculator
                 nameof(measurements));
         }
 
-        var availableShapingRows = totalYokeRows - 1; // row 1 is the cast-on round itself
+        // Row 1 is the cast-on round itself.
+        var availableShapingRows = totalYokeRows - 1;
 
         var (startBack, targetBack, startFront, targetFront, startSleeve, targetSleeve, delta) = style switch
         {
