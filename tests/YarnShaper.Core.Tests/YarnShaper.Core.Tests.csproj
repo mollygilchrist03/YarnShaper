@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\src\YarnShaper.Core\YarnShaper.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="AccuracyTests\Fixtures\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

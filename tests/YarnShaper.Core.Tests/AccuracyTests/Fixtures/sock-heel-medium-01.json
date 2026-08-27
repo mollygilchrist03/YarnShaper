@@ -1,0 +1,52 @@
+{
+  "name": "Heel-flap sock, size Medium",
+  "size": "Medium (9-10in foot circumference)",
+  "notes": "Cast-on/heel-stitch count (48/24) reproduced by choosing a footCircumferenceInches that round-trips through the calculator's own stitches-for-circumference math, so the flap/turn row-by-row schedules are compared on equal footing rather than starting from a different stitch count. Row gauge is unused by SockHeelShapingCalculator (only StitchesPerInch matters) and is a placeholder. The gusset section is intentionally excluded here — see docs/ACCURACY.md for the documented gap.",
+  "gauge": {
+    "stitchesPerInch": 7.0,
+    "rowsPerInch": 9.5
+  },
+  "measurements": {
+    "footCircumferenceInches": 6.857142857142857
+  },
+  "sections": {
+    "HeelFlap": [
+      { "row": 1, "stitches": 24, "action": "None" },
+      { "row": 2, "stitches": 24, "action": "None" },
+      { "row": 3, "stitches": 24, "action": "None" },
+      { "row": 4, "stitches": 24, "action": "None" },
+      { "row": 5, "stitches": 24, "action": "None" },
+      { "row": 6, "stitches": 24, "action": "None" },
+      { "row": 7, "stitches": 24, "action": "None" },
+      { "row": 8, "stitches": 24, "action": "None" },
+      { "row": 9, "stitches": 24, "action": "None" },
+      { "row": 10, "stitches": 24, "action": "None" },
+      { "row": 11, "stitches": 24, "action": "None" },
+      { "row": 12, "stitches": 24, "action": "None" },
+      { "row": 13, "stitches": 24, "action": "None" },
+      { "row": 14, "stitches": 24, "action": "None" },
+      { "row": 15, "stitches": 24, "action": "None" },
+      { "row": 16, "stitches": 24, "action": "None" },
+      { "row": 17, "stitches": 24, "action": "None" },
+      { "row": 18, "stitches": 24, "action": "None" },
+      { "row": 19, "stitches": 24, "action": "None" },
+      { "row": 20, "stitches": 24, "action": "None" },
+      { "row": 21, "stitches": 24, "action": "None" },
+      { "row": 22, "stitches": 24, "action": "None" },
+      { "row": 23, "stitches": 24, "action": "None" },
+      { "row": 24, "stitches": 24, "action": "None" }
+    ],
+    "HeelTurn": [
+      { "row": 1, "stitches": 23, "action": "Decrease" },
+      { "row": 2, "stitches": 22, "action": "Decrease" },
+      { "row": 3, "stitches": 21, "action": "Decrease" },
+      { "row": 4, "stitches": 20, "action": "Decrease" },
+      { "row": 5, "stitches": 19, "action": "Decrease" },
+      { "row": 6, "stitches": 18, "action": "Decrease" },
+      { "row": 7, "stitches": 17, "action": "Decrease" },
+      { "row": 8, "stitches": 16, "action": "Decrease" },
+      { "row": 9, "stitches": 15, "action": "Decrease" },
+      { "row": 10, "stitches": 14, "action": "Decrease" }
+    ]
+  }
+}
