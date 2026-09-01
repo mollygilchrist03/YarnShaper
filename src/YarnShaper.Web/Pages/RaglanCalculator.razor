@@ -151,7 +151,7 @@
     private string LastRowLabel => Style == RaglanStyle.TopDown ? "Stitches at underarm" : "Neck stitches";
 
     private StripeSequence Colorway { get; set; } =
-        new([new Stripe("#7c9c82", 4), new Stripe("#c98a3e", 2)]);
+        new([new Stripe("#7e9370", 4), new Stripe("#c99a3e", 2)]);
 
     private IReadOnlyDictionary<int, string>? RowColors;
     private IReadOnlyDictionary<string, double>? YardageByColor;
@@ -291,7 +291,7 @@
     }
 
     private string ColorForRow(ShapingRow row) =>
-        RowColors?.GetValueOrDefault(row.RowNumber) ?? "#7c9c82";
+        RowColors?.GetValueOrDefault(row.RowNumber) ?? "#7e9370";
 
     private sealed class RaglanInput
     {

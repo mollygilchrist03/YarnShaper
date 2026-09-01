@@ -71,8 +71,8 @@
     }
 
     ::deep .nav-link.active {
-        background: rgba(95, 127, 101, 0.35);
-        border-left-color: #8fb397;
+        background: rgba(0, 0, 0, 0.18);
+        border-left-color: var(--color-gold);
         color: #fff;
     }
 

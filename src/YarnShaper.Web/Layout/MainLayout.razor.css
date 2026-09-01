@@ -9,14 +9,13 @@ main {
 }
 
 .sidebar {
-    background: linear-gradient(165deg, #322921 0%, var(--color-ink) 55%, #221b16 100%);
+    background-color: var(--color-sage-dark);
+    background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.06) 0 3px, transparent 3px 11px);
 }
 
 .top-row {
-    background-color: rgba(250, 246, 239, 0.85);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-cream);
+    border-bottom: 3px dashed var(--color-border);
     justify-content: flex-end;
     height: 3.5rem;
     display: flex;

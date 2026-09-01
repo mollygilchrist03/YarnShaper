@@ -88,10 +88,10 @@
 
     private static readonly (string Name, StripeSequence Colorway)[] ColorwayPresets =
     [
-        ("Sage & Gold", new StripeSequence([new Stripe("#7c9c82", 4), new Stripe("#c98a3e", 2)])),
-        ("Rust & Cream", new StripeSequence([new Stripe("#96482c", 3), new Stripe("#f1e9db", 1), new Stripe("#2a231d", 1)])),
-        ("Moss Ombre", new StripeSequence([new Stripe("#45604a", 2), new Stripe("#7c9c82", 2), new Stripe("#b9d0bd", 2)])),
-        ("Berry & Oat", new StripeSequence([new Stripe("#8c4a56", 3), new Stripe("#e4dbc9", 2)])),
+        ("Sage & Gold", new StripeSequence([new Stripe("#7e9370", 4), new Stripe("#c99a3e", 2)])),
+        ("Rust & Cream", new StripeSequence([new Stripe("#8c3d30", 3), new Stripe("#e9d8b3", 1), new Stripe("#4a3226", 1)])),
+        ("Moss Ombre", new StripeSequence([new Stripe("#4f6142", 2), new Stripe("#7e9370", 2), new Stripe("#a8bf95", 2)])),
+        ("Berry & Oat", new StripeSequence([new Stripe("#a1495a", 3), new Stripe("#e9d8b3", 2)])),
     ];
 
     private Dictionary<GarmentSection, List<ShapingRow>>? DemoRows;
@@ -138,7 +138,7 @@
     }
 
     private string ColorForRow(ShapingRow row) =>
-        RowColors?.GetValueOrDefault(row.RowNumber) ?? "#7c9c82";
+        RowColors?.GetValueOrDefault(row.RowNumber) ?? "#7e9370";
 
     public void Dispose() => cts?.Cancel();
 }

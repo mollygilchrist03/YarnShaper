@@ -24,7 +24,7 @@
     public EventCallback<StripeSequence> ValueChanged { get; set; }
 
     private Task AddStripe() =>
-        Commit([.. Value.Stripes, new Stripe("#7c9c82", 2)]);
+        Commit([.. Value.Stripes, new Stripe("#7e9370", 2)]);
 
     private Task RemoveStripe(int index)
     {

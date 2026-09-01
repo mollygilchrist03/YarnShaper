@@ -102,7 +102,7 @@
     private List<ShapingRow>? Rows;
 
     private StripeSequence Colorway { get; set; } =
-        new([new Stripe("#7c9c82", 1), new Stripe("#c98a3e", 1)]);
+        new([new Stripe("#7e9370", 1), new Stripe("#c99a3e", 1)]);
 
     private IReadOnlyDictionary<int, string>? RowColors;
     private string SaveName = "";
@@ -217,7 +217,7 @@
     }
 
     private string ColorForRow(ShapingRow row) =>
-        RowColors?.GetValueOrDefault(row.RowNumber) ?? "#7c9c82";
+        RowColors?.GetValueOrDefault(row.RowNumber) ?? "#7e9370";
 
     private sealed class GrannySquareInput
     {

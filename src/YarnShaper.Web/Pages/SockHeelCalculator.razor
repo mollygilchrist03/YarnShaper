@@ -135,7 +135,7 @@
     private string Stat3Label = "";
 
     private StripeSequence Colorway { get; set; } =
-        new([new Stripe("#7c9c82", 4), new Stripe("#c98a3e", 2)]);
+        new([new Stripe("#7e9370", 4), new Stripe("#c99a3e", 2)]);
 
     private IReadOnlyDictionary<int, string>? RowColors;
     private IReadOnlyDictionary<string, double>? YardageByColor;
@@ -317,7 +317,7 @@
     // number back onto the shared global sequence before looking up its
     // color.
     private Func<ShapingRow, string> ColorSelectorFor(GarmentSection section) =>
-        row => RowColors?.GetValueOrDefault(row.RowNumber + PhaseOffsets.GetValueOrDefault(section)) ?? "#7c9c82";
+        row => RowColors?.GetValueOrDefault(row.RowNumber + PhaseOffsets.GetValueOrDefault(section)) ?? "#7e9370";
 
     private static string LabelFor(GarmentSection section) => section switch
     {
