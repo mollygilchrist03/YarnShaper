@@ -117,37 +117,42 @@ async function handleSearch(request, env, ctx, url, cors) {
   }
 
   const lowerQ = q.toLowerCase();
-  const [brands, yarns] = await Promise.all([
-    fetchListCached(cache, ctx, env, "/brands"),
-    fetchListCached(cache, ctx, env, "/yarns"),
-  ]);
+  const yarns = await fetchListCached(cache, ctx, env, "/yarns");
 
-  const matchingBrandNames = (brands.data ?? [])
-    .filter((b) => b.brandName?.toLowerCase().includes(lowerQ))
-    .map((b) => b.brandName)
-    .slice(0, MAX_NAME_MATCHES);
-
+  // Each /yarns entry already pairs a brand with a yarn line ("Cascade" +
+  // "220 Superwash"), so matching the combined string handles both a
+  // brand-only query ("malabrigo") and a brand+product query ("cascade
+  // 220") — a query like "cascade 220" doesn't appear whole in either
+  // field alone, only in their concatenation. Entries the API itself
+  // flags `unavailable` (a fully discontinued yarn line) are dropped here
+  // rather than fetched and filtered later — a single discontinued line
+  // can have hundreds of colorway entries sorted first, which would
+  // otherwise exhaust the fetch limit before reaching any live match.
   const matchingYarnNames = (yarns.data ?? [])
-    .filter((y) => y.yarnName?.toLowerCase().includes(lowerQ))
+    .filter((y) => !y.unavailable && `${y.brandName ?? ""} ${y.yarnName ?? ""}`.toLowerCase().includes(lowerQ))
     .map((y) => y.yarnName)
+    .filter((name, index, all) => name && all.indexOf(name) === index)
     .slice(0, MAX_NAME_MATCHES);
 
-  // Brand/yarn matches come first: someone typing "casc" almost certainly
-  // means the Cascade brand, not a colorway that happens to be named
-  // "Cascade" or "North Cascades". The colorway-name search runs last, as
-  // a fallback for descriptive-color-name searches like "sage".
+  // Yarn matches come first: someone typing "casc" almost certainly means
+  // the Cascade brand, not a colorway that happens to be named "Cascade"
+  // or "North Cascades". The colorway-name search runs last, as a
+  // fallback for descriptive-color-name searches like "sage".
+  //
+  // Fetch a modest buffer beyond the display limit — individual colorways
+  // (as opposed to whole discontinued yarn lines, already excluded above)
+  // can still be flagged unavailable one at a time.
+  const fetchLimit = Math.min(limit * 2, 50);
   const calls = [];
-  if (matchingBrandNames.length > 0) {
-    calls.push(
-      fetch(`${UPSTREAM_BASE}/colorways?brand=${encodeURIComponent(matchingBrandNames.join(","))}&limit=${limit}`, upstreamHeaders(env)),
-    );
-  }
   if (matchingYarnNames.length > 0) {
-    calls.push(
-      fetch(`${UPSTREAM_BASE}/colorways?yarn=${encodeURIComponent(matchingYarnNames.join(","))}&limit=${limit}`, upstreamHeaders(env)),
-    );
+    // Encode each name individually and join with a literal comma — the
+    // upstream API's list params split on a raw ",", so encoding the
+    // comma itself (as encodeURIComponent(a.join(",")) would) breaks
+    // every multi-match query into one unmatchable garbled name.
+    const yarnParam = matchingYarnNames.map(encodeURIComponent).join(",");
+    calls.push(fetch(`${UPSTREAM_BASE}/colorways?yarn=${yarnParam}&limit=${fetchLimit}`, upstreamHeaders(env)));
   }
-  calls.push(fetch(`${UPSTREAM_BASE}/colorways?name=${encodeURIComponent(q)}&limit=${limit}`, upstreamHeaders(env)));
+  calls.push(fetch(`${UPSTREAM_BASE}/colorways?name=${encodeURIComponent(q)}&limit=${fetchLimit}`, upstreamHeaders(env)));
 
   const responses = await Promise.all(calls);
   const bodies = await Promise.all(responses.map((r) => r.json().catch(() => ({ data: [] }))));
