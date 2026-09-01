@@ -52,8 +52,12 @@ worked in the round and row N is the same physical round in every section.
 Each stripe can also look up real yarn via the
 [Yarn Colorways API](https://temperature-blanket.com/api) two ways: find
 colorways near its current hex value, or search by yarn/brand name (e.g.
-"Malabrigo Rios") and apply a real colorway's exact color to the stripe
-with one click. This is opt-in and requires deploying the small proxy in
+"Malabrigo Rios") — optionally filtered to a specific yarn weight — and
+apply a real colorway's exact color to the stripe with one click. The
+estimated-yardage panel takes this further: "Find real yarn for this
+colorway" turns the already-computed yards-per-color into an actual
+shopping list, matching every color in the colorway to a real yarn at
+once. All of this is opt-in and requires deploying the small proxy in
 [`workers/yarn-colorway-proxy`](workers/yarn-colorway-proxy) (see below),
 so it's off by default rather than shipping a broken button.
 
