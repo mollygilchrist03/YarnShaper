@@ -15,3 +15,8 @@ publish/
 ## OS
 .DS_Store
 Thumbs.db
+
+## Cloudflare Worker (workers/yarn-colorway-proxy)
+node_modules/
+.wrangler/
+.dev.vars

@@ -1,15 +1,59 @@
 @namespace YarnShaper.Web.Components
+@inject YarnColorwayService YarnColorways
 
 <div class="colorway-picker">
     @for (var i = 0; i < Value.Stripes.Count; i++)
     {
         var index = i;
         var stripe = Value.Stripes[index];
-        <div class="stripe-row">
-            <input type="color" value="@stripe.Color" @onchange="e => UpdateColor(index, e)" aria-label="Stripe @(index + 1) color" />
-            <input type="number" min="1" value="@stripe.RowCount" @onchange="e => UpdateRowCount(index, e)" aria-label="Stripe @(index + 1) row count" />
-            <span class="stripe-row-suffix">rows</span>
-            <button type="button" class="remove-stripe" @onclick="() => RemoveStripe(index)" disabled="@(Value.Stripes.Count <= 1)" aria-label="Remove stripe @(index + 1)"><Icon Name="x-lg" /></button>
+        <div class="stripe-entry">
+            <div class="stripe-row">
+                <input type="color" value="@stripe.Color" @onchange="e => UpdateColor(index, e)" aria-label="Stripe @(index + 1) color" />
+                <input type="number" min="1" value="@stripe.RowCount" @onchange="e => UpdateRowCount(index, e)" aria-label="Stripe @(index + 1) row count" />
+                <span class="stripe-row-suffix">rows</span>
+                <button type="button" class="find-yarn-btn" @onclick="() => ToggleMatches(index, stripe.Color)" title="Find real yarn near this color" aria-label="Find real yarn near stripe @(index + 1) color"><Icon Name="search" /></button>
+                <button type="button" class="remove-stripe" @onclick="() => RemoveStripe(index)" disabled="@(Value.Stripes.Count <= 1)" aria-label="Remove stripe @(index + 1)"><Icon Name="x-lg" /></button>
+            </div>
+            @if (openMatchIndex == index)
+            {
+                <div class="yarn-match-panel">
+                    @{
+                        var result = matchCache.GetValueOrDefault(stripe.Color);
+                    }
+                    @if (result is null)
+                    {
+                        <p class="yarn-match-status">Searching&hellip;</p>
+                    }
+                    else if (!result.IsSuccess)
+                    {
+                        <p class="yarn-match-status yarn-match-error">@result.ErrorMessage</p>
+                    }
+                    else if (result.Matches.Count == 0)
+                    {
+                        <p class="yarn-match-status">No close matches found.</p>
+                    }
+                    else
+                    {
+                        <ul class="yarn-match-list">
+                            @foreach (var match in result.Matches)
+                            {
+                                <li class="yarn-match-chip">
+                                    <span class="yarn-match-swatch" style="background:@match.Hex"></span>
+                                    <span class="yarn-match-label">@match.BrandName @match.YarnName &middot; &ldquo;@match.Name&rdquo; &middot; @match.PercentMatch% match</span>
+                                    @if (!string.IsNullOrWhiteSpace(match.Href))
+                                    {
+                                        <a href="@match.Href" target="_blank" rel="noopener" class="yarn-match-link">View</a>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                        <p class="yarn-match-attribution">
+                            Yarn matches from <a href="https://temperature-blanket.com" target="_blank" rel="noopener">temperature-blanket.com</a>,
+                            licensed <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.
+                        </p>
+                    }
+                </div>
+            }
         </div>
     }
     <button type="button" class="btn-link add-stripe" @onclick="AddStripe"><Icon Name="plus-lg" /> Add stripe</button>
@@ -22,6 +66,9 @@
 
     [Parameter]
     public EventCallback<StripeSequence> ValueChanged { get; set; }
+
+    private int? openMatchIndex;
+    private readonly Dictionary<string, YarnColorwayLookupResult?> matchCache = [];
 
     private Task AddStripe() =>
         Commit([.. Value.Stripes, new Stripe("#7e9370", 2)]);
@@ -37,6 +84,7 @@
         var color = e.Value?.ToString();
         if (string.IsNullOrWhiteSpace(color)) return Task.CompletedTask;
 
+        openMatchIndex = null;
         var next = Value.Stripes.ToList();
         next[index] = new Stripe(color, next[index].RowCount);
         return Commit(next);
@@ -49,6 +97,23 @@
         var next = Value.Stripes.ToList();
         next[index] = new Stripe(next[index].Color, rowCount);
         return Commit(next);
+    }
+
+    private async Task ToggleMatches(int index, string hexColor)
+    {
+        if (openMatchIndex == index)
+        {
+            openMatchIndex = null;
+            return;
+        }
+
+        openMatchIndex = index;
+        if (!matchCache.ContainsKey(hexColor))
+        {
+            matchCache[hexColor] = null;
+            StateHasChanged();
+            matchCache[hexColor] = await YarnColorways.FindMatchesAsync(hexColor);
+        }
     }
 
     private Task Commit(IReadOnlyList<Stripe> stripes) => ValueChanged.InvokeAsync(new StripeSequence(stripes));

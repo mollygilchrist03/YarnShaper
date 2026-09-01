@@ -49,6 +49,11 @@ A colorway picker sits alongside every calculator: build a stripe
 sequence (color + row count per stripe), and it's mapped onto the real row
 data — every section recolors in sync, since these constructions are
 worked in the round and row N is the same physical round in every section.
+Each stripe can also look up real yarn colorways near its hex value via
+the [Yarn Colorways API](https://temperature-blanket.com/api) — this is
+opt-in and requires deploying the small proxy in
+[`workers/yarn-colorway-proxy`](workers/yarn-colorway-proxy) (see below),
+so it's off by default rather than shipping a broken button.
 
 The sock heel calculator supports three real, mechanically different
 heel techniques from one dropdown: the classic square flap with a
@@ -215,6 +220,14 @@ the actual comparison, not from claiming a perfect match.
   file at that path. The standard fix — copying `index.html` to `404.html`
   so Pages serves the app shell for any unmatched route while the browser
   keeps the real URL — is wired into the deploy workflow.
+- **A static WASM bundle can't hold a secret, so the one feature that
+  needs one lives outside it.** Real yarn-colorway matching calls a
+  third-party API gated behind a RapidAPI key; embedding that key in the
+  published app would expose it to anyone who opens dev tools. Instead
+  [`workers/yarn-colorway-proxy`](workers/yarn-colorway-proxy) is a tiny,
+  stateless Cloudflare Worker that holds the key and caches responses for
+  24h to stay inside the free API tier — the only server-side code in the
+  project, and it knows nothing beyond "relay this one endpoint."
 
 ## Tech stack
 
@@ -224,6 +237,7 @@ the actual comparison, not from claiming a perfect match.
 | Shaping math | Plain C# class library (`YarnShaper.Core`), no UI dependencies |
 | Rendering | Inline SVG generated from Razor components — no Canvas |
 | Persistence | Browser `localStorage` (save) and URL query string (share) — no backend, no database |
+| Yarn colorway lookup (opt-in) | [Cloudflare Worker proxy](workers/yarn-colorway-proxy) — the only server-side code in the project, holds no state of its own beyond a response cache |
 | Browser interop | Minimal, targeted JS interop for localStorage, clipboard, and `window.print()` only |
 | Testing | xUnit (`YarnShaper.Core.Tests`) — unit tests plus a fixture-based accuracy suite against real patterns |
 | CI/CD | GitHub Actions — test → publish → deploy |
@@ -247,8 +261,9 @@ accuracy-tested foundation, and a responsive layout audited down to
 
 - **PWA support.** A manifest and service worker would make the app
   installable and usable offline — genuinely low-cost here, since every
-  calculator is already 100% client-side with no network dependency at
-  runtime.
+  calculator's shaping math is already 100% client-side with no network
+  dependency at runtime (the opt-in yarn-colorway lookup is the one
+  exception, and would simply be unavailable offline).
 - **More accuracy fixtures.** `docs/ACCURACY.md` documents one real
   comparison per calculator's construction; more real patterns, especially
   ones matching the newer heel/raglan styles, would sharpen it further.

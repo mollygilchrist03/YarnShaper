@@ -552,11 +552,11 @@ input[type="number"], input[type="text"], select {
     color: var(--color-ink-soft);
 }
 
+.find-yarn-btn,
 .remove-stripe {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: auto;
     width: 1.6rem;
     height: 1.6rem;
     border: none;
@@ -567,9 +567,19 @@ input[type="number"], input[type="text"], select {
     flex-shrink: 0;
 }
 
+    .find-yarn-btn .icon,
     .remove-stripe .icon {
         width: 0.7rem;
         height: 0.7rem;
+    }
+
+    .find-yarn-btn:hover {
+        background: var(--color-sage-tint);
+        color: var(--color-sage-dark);
+    }
+
+    .remove-stripe {
+        margin-left: auto;
     }
 
     .remove-stripe:hover:not(:disabled) {
@@ -581,6 +591,62 @@ input[type="number"], input[type="text"], select {
         opacity: 0.4;
         cursor: default;
     }
+
+.yarn-match-panel {
+    margin: 0.35rem 0 0.15rem 2.7rem;
+    padding: 0.6rem 0.75rem;
+    background: var(--color-cream-deep);
+    border-radius: 10px;
+    font-size: 0.85rem;
+}
+
+.yarn-match-status {
+    margin: 0;
+    color: var(--color-ink-soft);
+}
+
+.yarn-match-error {
+    color: var(--color-error);
+}
+
+.yarn-match-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.yarn-match-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.yarn-match-swatch {
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 1px var(--color-border);
+}
+
+.yarn-match-label {
+    flex: 1;
+    color: var(--color-ink);
+}
+
+.yarn-match-link {
+    flex-shrink: 0;
+    font-size: 0.8rem;
+}
+
+.yarn-match-attribution {
+    margin: 0.5rem 0 0;
+    font-size: 0.75rem;
+    color: var(--color-ink-soft);
+}
 
 .add-stripe {
     align-self: flex-start;
