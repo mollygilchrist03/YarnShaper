@@ -9,6 +9,13 @@ browser; a few browser APIs that C# genuinely can't reach on its own
 (localStorage, the clipboard, print) are called through minimal, targeted
 JS interop for the save/share/export features, and nowhere else.
 
+The look is deliberately not another sleek SaaS dashboard: it leans into a
+whimsical grandma-craft-room aesthetic — stitched dashed borders, a
+gingham ribbon on the feature cards, a handwritten script accent, hard
+"stamped" button shadows instead of soft modern glow — closer to a
+cross-stitch sampler or a 1970s pattern book than a component library
+demo.
+
 **Live demo:** [mollygilchrist03.github.io/YarnShaper](https://mollygilchrist03.github.io/YarnShaper/)
 
 ![Home page — a live raglan schematic auto-cycling through preset colorways, no input required](docs/screenshots/home.png)
@@ -234,11 +241,10 @@ dotnet run --project src/YarnShaper.Web
 
 Every calculator from the original build plan, plus construction coverage
 (raglan ease and top-down/bottom-up, three sock heel styles, any granny
-motif corner count), save/share/export, input validation, and an
-accuracy-tested foundation are shipped. What's left:
+motif corner count), save/share/export, input validation, an
+accuracy-tested foundation, and a responsive layout audited down to
+320px-wide phones are shipped. What's left:
 
-- **Mobile responsiveness.** The three calculator pages and the schematic
-  renderer haven't been audited at phone-width viewports yet.
 - **PWA support.** A manifest and service worker would make the app
   installable and usable offline — genuinely low-cost here, since every
   calculator is already 100% client-side with no network dependency at
