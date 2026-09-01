@@ -676,6 +676,13 @@ input[type="number"], input[type="text"], select {
         font-size: 0.85rem;
     }
 
+    .yarn-search-row select {
+        flex-shrink: 0;
+        width: auto;
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
 .yarn-search-btn,
 .yarn-search-clear {
     flex-shrink: 0;

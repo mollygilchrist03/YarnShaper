@@ -10,7 +10,11 @@ public sealed record YarnColorwayMatch(
     string? Href,
     int? PercentMatch);
 
+public sealed record YarnWeightOption(string Id, string Name);
+
 internal sealed record YarnColorwayApiResponse(List<YarnColorwayMatch> Data);
+
+internal sealed record YarnWeightsApiResponse(List<YarnWeightOption> Data);
 
 // Blazor WebAssembly publishes with IL trimming on, which can silently drop
 // the reflection metadata System.Text.Json needs for plain POCOs. Source
@@ -18,6 +22,7 @@ internal sealed record YarnColorwayApiResponse(List<YarnColorwayMatch> Data);
 // deserializing colorway matches correctly, not just `dotnet run`.
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(YarnColorwayApiResponse))]
+[JsonSerializable(typeof(YarnWeightsApiResponse))]
 internal sealed partial class YarnColorwayJsonContext : JsonSerializerContext
 {
 }

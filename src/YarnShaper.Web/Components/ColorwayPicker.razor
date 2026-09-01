@@ -21,6 +21,16 @@
                         <input type="text" placeholder="Search yarn by name or brand&hellip;" value="@searchQuery"
                                @oninput="e => searchQuery = e.Value?.ToString() ?? string.Empty"
                                @onkeydown="@(e => OnSearchKeyDown(e, index))" />
+                        @if (weightOptions.Count > 0)
+                        {
+                            <select class="yarn-search-weight" value="@selectedWeight" @onchange="e => selectedWeight = e.Value?.ToString() ?? string.Empty" aria-label="Filter by yarn weight">
+                                <option value="">Any weight</option>
+                                @foreach (var w in weightOptions)
+                                {
+                                    <option value="@w.Id">@w.Name</option>
+                                }
+                            </select>
+                        }
                         <button type="button" class="btn-link yarn-search-btn" @onclick="() => RunSearch(index)">Search</button>
                         @if (searchResult is not null)
                         {
@@ -88,6 +98,13 @@
     private readonly Dictionary<string, YarnColorwayLookupResult?> matchCache = [];
     private string searchQuery = string.Empty;
     private YarnColorwayLookupResult? searchResult;
+    private IReadOnlyList<YarnWeightOption> weightOptions = [];
+    private string selectedWeight = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        weightOptions = await YarnColorways.GetWeightsAsync();
+    }
 
     private Task AddStripe() =>
         Commit([.. Value.Stripes, new Stripe("#7e9370", 2)]);
@@ -155,7 +172,7 @@
 
         searchResult = null;
         StateHasChanged();
-        searchResult = await YarnColorways.SearchByNameAsync(searchQuery);
+        searchResult = await YarnColorways.SearchByNameAsync(searchQuery, weight: selectedWeight);
     }
 
     private Task OnSearchKeyDown(KeyboardEventArgs e, int index) =>

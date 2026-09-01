@@ -19,10 +19,54 @@ public sealed class YarnColorwayService(HttpClient http, string? proxyBaseUrl)
     }
 
     public Task<YarnColorwayLookupResult> SearchByNameAsync(
-        string query, int limit = 8, CancellationToken cancellationToken = default)
+        string query, string? weight = null, int limit = 8, CancellationToken cancellationToken = default)
     {
         var q = Uri.EscapeDataString(query.Trim());
-        return FetchAsync($"/search?q={q}&limit={limit}", cancellationToken);
+        var path = $"/search?q={q}&limit={limit}";
+        if (!string.IsNullOrWhiteSpace(weight))
+        {
+            path += $"&weight={Uri.EscapeDataString(weight)}";
+        }
+        return FetchAsync(path, cancellationToken);
+    }
+
+    private IReadOnlyList<YarnWeightOption>? cachedWeights;
+
+    /// <summary>
+    /// The list of yarn-weight categories the database uses (Fingering, DK,
+    /// Worsted, ...), fetched once and reused — it changes rarely enough
+    /// that re-fetching per component instance would just waste quota.
+    /// </summary>
+    public async Task<IReadOnlyList<YarnWeightOption>> GetWeightsAsync(CancellationToken cancellationToken = default)
+    {
+        if (cachedWeights is not null)
+        {
+            return cachedWeights;
+        }
+
+        if (string.IsNullOrWhiteSpace(proxyBaseUrl))
+        {
+            return [];
+        }
+
+        try
+        {
+            using var response = await http.GetAsync($"{proxyBaseUrl.TrimEnd('/')}/weights", cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return [];
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            var parsed = await JsonSerializer.DeserializeAsync(
+                stream, YarnColorwayJsonContext.Default.YarnWeightsApiResponse, cancellationToken);
+            cachedWeights = parsed?.Data ?? [];
+            return cachedWeights;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
+        {
+            return [];
+        }
     }
 
     private async Task<YarnColorwayLookupResult> FetchAsync(string relativePath, CancellationToken cancellationToken)

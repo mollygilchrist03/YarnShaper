@@ -106,6 +106,7 @@ async function handleSearch(request, env, ctx, url, cors) {
     return jsonError(cors, 400, 'Missing required "q" query parameter.');
   }
   const limit = Math.min(Number(url.searchParams.get("limit")) || 8, 50);
+  const weight = url.searchParams.get("weight") || "";
 
   const cache = caches.default;
   const cacheKey = new Request(url.toString(), request);
@@ -129,7 +130,12 @@ async function handleSearch(request, env, ctx, url, cors) {
   // can have hundreds of colorway entries sorted first, which would
   // otherwise exhaust the fetch limit before reaching any live match.
   const matchingYarnNames = (yarns.data ?? [])
-    .filter((y) => !y.unavailable && `${y.brandName ?? ""} ${y.yarnName ?? ""}`.toLowerCase().includes(lowerQ))
+    .filter(
+      (y) =>
+        !y.unavailable &&
+        (!weight || y.yarnWeightId === weight) &&
+        `${y.brandName ?? ""} ${y.yarnName ?? ""}`.toLowerCase().includes(lowerQ),
+    )
     .map((y) => y.yarnName)
     .filter((name, index, all) => name && all.indexOf(name) === index)
     .slice(0, MAX_NAME_MATCHES);
@@ -152,7 +158,11 @@ async function handleSearch(request, env, ctx, url, cors) {
     const yarnParam = matchingYarnNames.map(encodeURIComponent).join(",");
     calls.push(fetch(`${UPSTREAM_BASE}/colorways?yarn=${yarnParam}&limit=${fetchLimit}`, upstreamHeaders(env)));
   }
-  calls.push(fetch(`${UPSTREAM_BASE}/colorways?name=${encodeURIComponent(q)}&limit=${fetchLimit}`, upstreamHeaders(env)));
+  const nameUrl = new URL(`${UPSTREAM_BASE}/colorways`);
+  nameUrl.searchParams.set("name", q);
+  nameUrl.searchParams.set("limit", String(fetchLimit));
+  if (weight) nameUrl.searchParams.set("weight", weight);
+  calls.push(fetch(nameUrl.toString(), upstreamHeaders(env)));
 
   const responses = await Promise.all(calls);
   const bodies = await Promise.all(responses.map((r) => r.json().catch(() => ({ data: [] }))));
@@ -206,6 +216,10 @@ export default {
 
     if (url.pathname === "/search") {
       return handleSearch(request, env, ctx, url, cors);
+    }
+
+    if (url.pathname === "/weights") {
+      return proxyToUpstream(request, env, ctx, url, "/weights", [], cors);
     }
 
     return new Response("Not found", { status: 404, headers: cors });
