@@ -39,7 +39,7 @@ html, body {
         var(--color-cream);
     background-size: 22px 22px;
     background-attachment: fixed;
-    overflow-x: hidden;
+    overflow-x: clip;
 }
 
 @media (prefers-reduced-motion: reduce) {
