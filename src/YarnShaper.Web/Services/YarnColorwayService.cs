@@ -11,8 +11,21 @@ namespace YarnShaper.Web.Services;
 /// </summary>
 public sealed class YarnColorwayService(HttpClient http, string? proxyBaseUrl)
 {
-    public async Task<YarnColorwayLookupResult> FindMatchesAsync(
+    public Task<YarnColorwayLookupResult> FindMatchesAsync(
         string hexColor, int limit = 8, int threshold = 75, CancellationToken cancellationToken = default)
+    {
+        var color = Uri.EscapeDataString(hexColor.TrimStart('#'));
+        return FetchAsync($"/match?color={color}&limit={limit}&threshold={threshold}", cancellationToken);
+    }
+
+    public Task<YarnColorwayLookupResult> SearchByNameAsync(
+        string query, int limit = 8, CancellationToken cancellationToken = default)
+    {
+        var q = Uri.EscapeDataString(query.Trim());
+        return FetchAsync($"/search?q={q}&limit={limit}", cancellationToken);
+    }
+
+    private async Task<YarnColorwayLookupResult> FetchAsync(string relativePath, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(proxyBaseUrl))
         {
@@ -20,8 +33,7 @@ public sealed class YarnColorwayService(HttpClient http, string? proxyBaseUrl)
                 "Yarn lookup isn't set up for this deployment yet — see workers/yarn-colorway-proxy/README.md.");
         }
 
-        var color = Uri.EscapeDataString(hexColor.TrimStart('#'));
-        var url = $"{proxyBaseUrl.TrimEnd('/')}/match?color={color}&limit={limit}&threshold={threshold}";
+        var url = $"{proxyBaseUrl.TrimEnd('/')}{relativePath}";
 
         try
         {

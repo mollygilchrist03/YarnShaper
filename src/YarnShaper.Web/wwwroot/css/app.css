@@ -173,11 +173,15 @@ code {
 
 .btn-link {
     display: inline-block;
+    font: inherit;
     font-weight: 700;
     color: var(--color-rust-dark);
     text-decoration: none;
+    background: none;
+    border: none;
     border-bottom: 2px dashed var(--color-rust);
-    padding-bottom: 1px;
+    padding: 0 0 1px;
+    cursor: pointer;
     transition: color 0.15s ease, border-color 0.15s ease;
 }
 
@@ -637,15 +641,45 @@ input[type="number"], input[type="text"], select {
     color: var(--color-ink);
 }
 
+.yarn-match-use,
 .yarn-match-link {
     flex-shrink: 0;
     font-size: 0.8rem;
+}
+
+.yarn-match-use {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--color-sage-dark);
+    text-decoration: underline;
+    cursor: pointer;
 }
 
 .yarn-match-attribution {
     margin: 0.5rem 0 0;
     font-size: 0.75rem;
     color: var(--color-ink-soft);
+}
+
+.yarn-search-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+    .yarn-search-row input[type="text"] {
+        flex: 1;
+        min-width: 0;
+        padding: 0.3rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+.yarn-search-btn,
+.yarn-search-clear {
+    flex-shrink: 0;
+    font-size: 0.8rem;
 }
 
 .add-stripe {

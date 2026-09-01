@@ -11,14 +11,24 @@
                 <input type="color" value="@stripe.Color" @onchange="e => UpdateColor(index, e)" aria-label="Stripe @(index + 1) color" />
                 <input type="number" min="1" value="@stripe.RowCount" @onchange="e => UpdateRowCount(index, e)" aria-label="Stripe @(index + 1) row count" />
                 <span class="stripe-row-suffix">rows</span>
-                <button type="button" class="find-yarn-btn" @onclick="() => ToggleMatches(index, stripe.Color)" title="Find real yarn near this color" aria-label="Find real yarn near stripe @(index + 1) color"><Icon Name="search" /></button>
+                <button type="button" class="find-yarn-btn" @onclick="() => ToggleMatches(index, stripe.Color)" title="Find real yarn for this stripe" aria-label="Find real yarn for stripe @(index + 1)"><Icon Name="search" /></button>
                 <button type="button" class="remove-stripe" @onclick="() => RemoveStripe(index)" disabled="@(Value.Stripes.Count <= 1)" aria-label="Remove stripe @(index + 1)"><Icon Name="x-lg" /></button>
             </div>
             @if (openMatchIndex == index)
             {
                 <div class="yarn-match-panel">
+                    <div class="yarn-search-row">
+                        <input type="text" placeholder="Search yarn by name or brand&hellip;" value="@searchQuery"
+                               @oninput="e => searchQuery = e.Value?.ToString() ?? string.Empty"
+                               @onkeydown="@(e => OnSearchKeyDown(e, index))" />
+                        <button type="button" class="btn-link yarn-search-btn" @onclick="() => RunSearch(index)">Search</button>
+                        @if (searchResult is not null)
+                        {
+                            <button type="button" class="btn-link yarn-search-clear" @onclick="ClearSearch">Clear</button>
+                        }
+                    </div>
                     @{
-                        var result = matchCache.GetValueOrDefault(stripe.Color);
+                        var result = searchResult ?? matchCache.GetValueOrDefault(stripe.Color);
                     }
                     @if (result is null)
                     {
@@ -30,7 +40,7 @@
                     }
                     else if (result.Matches.Count == 0)
                     {
-                        <p class="yarn-match-status">No close matches found.</p>
+                        <p class="yarn-match-status">No matches found.</p>
                     }
                     else
                     {
@@ -39,7 +49,14 @@
                             {
                                 <li class="yarn-match-chip">
                                     <span class="yarn-match-swatch" style="background:@match.Hex"></span>
-                                    <span class="yarn-match-label">@match.BrandName @match.YarnName &middot; &ldquo;@match.Name&rdquo; &middot; @match.PercentMatch% match</span>
+                                    <span class="yarn-match-label">
+                                        @match.BrandName @match.YarnName &middot; &ldquo;@match.Name&rdquo;
+                                        @if (match.PercentMatch is int percent)
+                                        {
+                                            @: &middot; @(percent)% match
+                                        }
+                                    </span>
+                                    <button type="button" class="yarn-match-use" @onclick="() => UseColor(index, match.Hex)">Use</button>
                                     @if (!string.IsNullOrWhiteSpace(match.Href))
                                     {
                                         <a href="@match.Href" target="_blank" rel="noopener" class="yarn-match-link">View</a>
@@ -69,6 +86,8 @@
 
     private int? openMatchIndex;
     private readonly Dictionary<string, YarnColorwayLookupResult?> matchCache = [];
+    private string searchQuery = string.Empty;
+    private YarnColorwayLookupResult? searchResult;
 
     private Task AddStripe() =>
         Commit([.. Value.Stripes, new Stripe("#7e9370", 2)]);
@@ -99,6 +118,14 @@
         return Commit(next);
     }
 
+    private Task UseColor(int index, string hex)
+    {
+        openMatchIndex = null;
+        var next = Value.Stripes.ToList();
+        next[index] = new Stripe(hex, next[index].RowCount);
+        return Commit(next);
+    }
+
     private async Task ToggleMatches(int index, string hexColor)
     {
         if (openMatchIndex == index)
@@ -108,12 +135,36 @@
         }
 
         openMatchIndex = index;
+        searchQuery = string.Empty;
+        searchResult = null;
         if (!matchCache.ContainsKey(hexColor))
         {
             matchCache[hexColor] = null;
             StateHasChanged();
             matchCache[hexColor] = await YarnColorways.FindMatchesAsync(hexColor);
         }
+    }
+
+    private async Task RunSearch(int index)
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+        {
+            searchResult = null;
+            return;
+        }
+
+        searchResult = null;
+        StateHasChanged();
+        searchResult = await YarnColorways.SearchByNameAsync(searchQuery);
+    }
+
+    private Task OnSearchKeyDown(KeyboardEventArgs e, int index) =>
+        e.Key == "Enter" ? RunSearch(index) : Task.CompletedTask;
+
+    private void ClearSearch()
+    {
+        searchQuery = string.Empty;
+        searchResult = null;
     }
 
     private Task Commit(IReadOnlyList<Stripe> stripes) => ValueChanged.InvokeAsync(new StripeSequence(stripes));

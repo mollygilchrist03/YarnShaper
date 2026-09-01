@@ -1,8 +1,7 @@
 // Proxies the Yarn Colorways API (RapidAPI) so the Yarn Shaper web app — a
 // static site with no server of its own — can look up real yarn colorways
-// near a hex color without shipping a RapidAPI secret key in the public
-// WASM bundle. Responses are cached for 24h via the Workers Cache API to
-// stay inside the free RapidAPI tier's 500 calls/month.
+// by hex color or by a free-text yarn/brand search, without shipping a
+// RapidAPI secret key in the public WASM bundle.
 
 const ALLOWED_ORIGINS = new Set([
   "https://mollygilchrist03.github.io",
@@ -12,7 +11,7 @@ const ALLOWED_ORIGINS = new Set([
 
 const UPSTREAM_BASE = "https://yarn-colorways.p.rapidapi.com/v3";
 const CACHE_TTL_SECONDS = 60 * 60 * 24;
-const PASSTHROUGH_PARAMS = ["limit", "threshold", "brand", "yarn", "weight", "name", "exactName"];
+const MAX_NAME_MATCHES = 20;
 
 function corsHeaders(origin) {
   const headers = {
@@ -24,6 +23,155 @@ function corsHeaders(origin) {
     headers["Access-Control-Allow-Origin"] = origin;
   }
   return headers;
+}
+
+function jsonError(cors, status, message) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
+}
+
+function upstreamHeaders(env) {
+  return {
+    headers: {
+      "X-RapidAPI-Key": env.RAPIDAPI_KEY,
+      "X-RapidAPI-Host": "yarn-colorways.p.rapidapi.com",
+    },
+  };
+}
+
+async function proxyToUpstream(request, env, ctx, url, upstreamPath, passthroughParams, cors) {
+  const cache = caches.default;
+  const cacheKey = new Request(url.toString(), request);
+  const cached = await cache.match(cacheKey);
+  if (cached) {
+    const response = new Response(cached.body, cached);
+    for (const [key, value] of Object.entries(cors)) response.headers.set(key, value);
+    return response;
+  }
+
+  const upstream = new URL(`${UPSTREAM_BASE}${upstreamPath}`);
+  for (const key of passthroughParams) {
+    const value = url.searchParams.get(key);
+    if (value) upstream.searchParams.set(key, value);
+  }
+
+  const upstreamResponse = await fetch(upstream.toString(), upstreamHeaders(env));
+  const body = await upstreamResponse.text();
+  const response = new Response(body, {
+    status: upstreamResponse.status,
+    headers: {
+      ...cors,
+      "Content-Type": "application/json",
+      "Cache-Control": `public, max-age=${CACHE_TTL_SECONDS}`,
+    },
+  });
+
+  if (upstreamResponse.ok) {
+    ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  }
+
+  return response;
+}
+
+// /brands and /yarns list every brand/yarn name in the database — small,
+// slow-changing payloads. Fetching (and caching) them lets us do our own
+// substring matching, since the upstream `brand`/`yarn` filters only accept
+// an exact name, not a partial one.
+async function fetchListCached(cache, ctx, env, path) {
+  const upstreamUrl = `${UPSTREAM_BASE}${path}`;
+  const cacheKey = new Request(upstreamUrl);
+  const cached = await cache.match(cacheKey);
+  if (cached) return cached.json();
+
+  const response = await fetch(upstreamUrl, upstreamHeaders(env));
+  const body = await response.text();
+  if (response.ok) {
+    ctx.waitUntil(
+      cache.put(
+        cacheKey,
+        new Response(body, {
+          headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${CACHE_TTL_SECONDS}` },
+        }),
+      ),
+    );
+  }
+  return JSON.parse(body);
+}
+
+async function handleSearch(request, env, ctx, url, cors) {
+  const q = (url.searchParams.get("q") || "").trim();
+  if (!q) {
+    return jsonError(cors, 400, 'Missing required "q" query parameter.');
+  }
+  const limit = Math.min(Number(url.searchParams.get("limit")) || 8, 50);
+
+  const cache = caches.default;
+  const cacheKey = new Request(url.toString(), request);
+  const cached = await cache.match(cacheKey);
+  if (cached) {
+    const response = new Response(cached.body, cached);
+    for (const [key, value] of Object.entries(cors)) response.headers.set(key, value);
+    return response;
+  }
+
+  const lowerQ = q.toLowerCase();
+  const [brands, yarns] = await Promise.all([
+    fetchListCached(cache, ctx, env, "/brands"),
+    fetchListCached(cache, ctx, env, "/yarns"),
+  ]);
+
+  const matchingBrandNames = (brands.data ?? [])
+    .filter((b) => b.brandName?.toLowerCase().includes(lowerQ))
+    .map((b) => b.brandName)
+    .slice(0, MAX_NAME_MATCHES);
+
+  const matchingYarnNames = (yarns.data ?? [])
+    .filter((y) => y.yarnName?.toLowerCase().includes(lowerQ))
+    .map((y) => y.yarnName)
+    .slice(0, MAX_NAME_MATCHES);
+
+  // Brand/yarn matches come first: someone typing "casc" almost certainly
+  // means the Cascade brand, not a colorway that happens to be named
+  // "Cascade" or "North Cascades". The colorway-name search runs last, as
+  // a fallback for descriptive-color-name searches like "sage".
+  const calls = [];
+  if (matchingBrandNames.length > 0) {
+    calls.push(
+      fetch(`${UPSTREAM_BASE}/colorways?brand=${encodeURIComponent(matchingBrandNames.join(","))}&limit=${limit}`, upstreamHeaders(env)),
+    );
+  }
+  if (matchingYarnNames.length > 0) {
+    calls.push(
+      fetch(`${UPSTREAM_BASE}/colorways?yarn=${encodeURIComponent(matchingYarnNames.join(","))}&limit=${limit}`, upstreamHeaders(env)),
+    );
+  }
+  calls.push(fetch(`${UPSTREAM_BASE}/colorways?name=${encodeURIComponent(q)}&limit=${limit}`, upstreamHeaders(env)));
+
+  const responses = await Promise.all(calls);
+  const bodies = await Promise.all(responses.map((r) => r.json().catch(() => ({ data: [] }))));
+
+  const seen = new Set();
+  const merged = [];
+  outer: for (const body of bodies) {
+    for (const item of body.data ?? []) {
+      if (item.unavailable) continue;
+      const key = `${item.brandId}/${item.yarnId}/${item.name}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(item);
+      if (merged.length >= limit) break outer;
+    }
+  }
+
+  const responseBody = JSON.stringify({ meta: { limit, offset: 0, total: merged.length }, data: merged });
+  const response = new Response(responseBody, {
+    status: 200,
+    headers: { ...cors, "Content-Type": "application/json", "Cache-Control": `public, max-age=${CACHE_TTL_SECONDS}` },
+  });
+  ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  return response;
 }
 
 export default {
@@ -40,54 +188,21 @@ export default {
     }
 
     const url = new URL(request.url);
-    if (url.pathname !== "/match") {
-      return new Response("Not found", { status: 404, headers: cors });
+
+    if (url.pathname === "/match") {
+      const color = url.searchParams.get("color");
+      if (!color) {
+        return jsonError(cors, 400, 'Missing required "color" query parameter.');
+      }
+      const upstreamPath = `/match/${encodeURIComponent(color)}`;
+      const passthroughParams = ["limit", "threshold", "brand", "yarn", "weight", "name", "exactName"];
+      return proxyToUpstream(request, env, ctx, url, upstreamPath, passthroughParams, cors);
     }
 
-    const color = url.searchParams.get("color");
-    if (!color) {
-      return new Response(JSON.stringify({ error: 'Missing required "color" query parameter.' }), {
-        status: 400,
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
+    if (url.pathname === "/search") {
+      return handleSearch(request, env, ctx, url, cors);
     }
 
-    const cache = caches.default;
-    const cacheKey = new Request(url.toString(), request);
-    const cached = await cache.match(cacheKey);
-    if (cached) {
-      const response = new Response(cached.body, cached);
-      for (const [key, value] of Object.entries(cors)) response.headers.set(key, value);
-      return response;
-    }
-
-    const upstream = new URL(`${UPSTREAM_BASE}/match/${encodeURIComponent(color)}`);
-    for (const key of PASSTHROUGH_PARAMS) {
-      const value = url.searchParams.get(key);
-      if (value) upstream.searchParams.set(key, value);
-    }
-
-    const upstreamResponse = await fetch(upstream.toString(), {
-      headers: {
-        "X-RapidAPI-Key": env.RAPIDAPI_KEY,
-        "X-RapidAPI-Host": "yarn-colorways.p.rapidapi.com",
-      },
-    });
-
-    const body = await upstreamResponse.text();
-    const response = new Response(body, {
-      status: upstreamResponse.status,
-      headers: {
-        ...cors,
-        "Content-Type": "application/json",
-        "Cache-Control": `public, max-age=${CACHE_TTL_SECONDS}`,
-      },
-    });
-
-    if (upstreamResponse.ok) {
-      ctx.waitUntil(cache.put(cacheKey, response.clone()));
-    }
-
-    return response;
+    return new Response("Not found", { status: 404, headers: cors });
   },
 };

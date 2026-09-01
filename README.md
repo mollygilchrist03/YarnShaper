@@ -49,9 +49,11 @@ A colorway picker sits alongside every calculator: build a stripe
 sequence (color + row count per stripe), and it's mapped onto the real row
 data — every section recolors in sync, since these constructions are
 worked in the round and row N is the same physical round in every section.
-Each stripe can also look up real yarn colorways near its hex value via
-the [Yarn Colorways API](https://temperature-blanket.com/api) — this is
-opt-in and requires deploying the small proxy in
+Each stripe can also look up real yarn via the
+[Yarn Colorways API](https://temperature-blanket.com/api) two ways: find
+colorways near its current hex value, or search by yarn/brand name (e.g.
+"Malabrigo Rios") and apply a real colorway's exact color to the stripe
+with one click. This is opt-in and requires deploying the small proxy in
 [`workers/yarn-colorway-proxy`](workers/yarn-colorway-proxy) (see below),
 so it's off by default rather than shipping a broken button.
 
@@ -228,6 +230,14 @@ the actual comparison, not from claiming a perfect match.
   stateless Cloudflare Worker that holds the key and caches responses for
   24h to stay inside the free API tier — the only server-side code in the
   project, and it knows nothing beyond "relay this one endpoint."
+- **Free-text yarn search needed a workaround the upstream API doesn't
+  offer.** The Yarn Colorways API's `brand`/`yarn` filters only match an
+  exact name — typing "casc" finds nothing, only "Cascade" does — which
+  makes search-as-you-type impossible against them directly. The proxy
+  fetches and caches the full brand/yarn name lists (small, slow-changing
+  payloads) and does its own substring matching locally, then queries
+  colorways for whatever it found — so "casc" in the UI still surfaces
+  real Cascade yarn.
 
 ## Tech stack
 

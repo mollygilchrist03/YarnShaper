@@ -8,7 +8,7 @@ public sealed record YarnColorwayMatch(
     string YarnName,
     string BrandName,
     string? Href,
-    int PercentMatch);
+    int? PercentMatch);
 
 internal sealed record YarnColorwayApiResponse(List<YarnColorwayMatch> Data);
 
