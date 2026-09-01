@@ -736,6 +736,7 @@ input[type="number"], input[type="text"], select {
 
     .yardage-list li {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         gap: 0.6rem;
         padding: 0.6rem 1rem;
@@ -796,6 +797,27 @@ input[type="number"], input[type="text"], select {
     font-size: 0.78rem;
     color: var(--color-ink-soft);
     margin: 0.6rem 0 0;
+}
+
+.yardage-suggestion {
+    flex-basis: 100%;
+    font-size: 0.78rem;
+    color: var(--color-ink-soft);
+    padding-left: 1.5rem;
+}
+
+    .yardage-suggestion a {
+        margin-left: 0.4rem;
+    }
+
+.yardage-suggestion-empty {
+    font-style: italic;
+}
+
+.find-yarn-shopping-list {
+    display: block;
+    margin-top: 0.6rem;
+    font-size: 0.85rem;
 }
 
 .error-banner {

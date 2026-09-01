@@ -1,4 +1,5 @@
 @namespace YarnShaper.Web.Components
+@inject YarnColorwayService YarnColorways
 
 @if (YardageByColor.Count > 0)
 {
@@ -11,6 +12,24 @@
                     <span class="yardage-swatch" style="background: @entry.Key;"></span>
                     <span class="yardage-color">@entry.Key</span>
                     <span class="yardage-value">@entry.Value.ToString("0.#") yd</span>
+                    @if (hasFetchedSuggestions)
+                    {
+                        var suggestion = suggestions.GetValueOrDefault(entry.Key);
+                        @if (suggestion is not null)
+                        {
+                            <span class="yardage-suggestion">
+                                &rarr; @suggestion.BrandName @suggestion.YarnName &ldquo;@suggestion.Name&rdquo;
+                                @if (!string.IsNullOrWhiteSpace(suggestion.Href))
+                                {
+                                    <a href="@suggestion.Href" target="_blank" rel="noopener">View</a>
+                                }
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="yardage-suggestion yardage-suggestion-empty">&rarr; No real yarn match found</span>
+                        }
+                    }
                 </li>
             }
             <li class="yardage-total">
@@ -21,10 +40,57 @@
         <p class="yardage-caveat">
             Rough estimate — assumes a stitch uses about 5&#215; its own width in yarn. Not a substitute for weighing a gauge swatch.
         </p>
+
+        @if (!hasFetchedSuggestions)
+        {
+            <button type="button" class="btn-link find-yarn-shopping-list" disabled="@isLoadingSuggestions" @onclick="FetchSuggestionsAsync">
+                @(isLoadingSuggestions ? "Finding real yarn…" : "Find real yarn for this colorway")
+            </button>
+        }
+        else if (suggestionsError is not null)
+        {
+            <p class="yarn-match-status yarn-match-error">@suggestionsError</p>
+        }
+        else
+        {
+            <p class="yarn-match-attribution">
+                Yarn matches from <a href="https://temperature-blanket.com" target="_blank" rel="noopener">temperature-blanket.com</a>,
+                licensed <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.
+            </p>
+        }
     </div>
 }
 
 @code {
     [Parameter, EditorRequired]
     public IReadOnlyDictionary<string, double> YardageByColor { get; set; } = new Dictionary<string, double>();
+
+    private readonly Dictionary<string, YarnColorwayMatch?> suggestions = [];
+    private bool hasFetchedSuggestions;
+    private bool isLoadingSuggestions;
+    private string? suggestionsError;
+
+    private async Task FetchSuggestionsAsync()
+    {
+        isLoadingSuggestions = true;
+        StateHasChanged();
+
+        suggestions.Clear();
+        suggestionsError = null;
+
+        // Sequential rather than parallel: the upstream API's free tier has
+        // a tight per-second rate limit, and this only runs once per click.
+        foreach (var hex in YardageByColor.Keys)
+        {
+            var result = await YarnColorways.FindMatchesAsync(hex, limit: 1);
+            suggestions[hex] = result.IsSuccess && result.Matches.Count > 0 ? result.Matches[0] : null;
+            if (!result.IsSuccess)
+            {
+                suggestionsError ??= result.ErrorMessage;
+            }
+        }
+
+        hasFetchedSuggestions = true;
+        isLoadingSuggestions = false;
+    }
 }
