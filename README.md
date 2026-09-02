@@ -273,11 +273,6 @@ motif corner count), save/share/export, input validation, an
 accuracy-tested foundation, and a responsive layout audited down to
 320px-wide phones are shipped. What's left:
 
-- **PWA support.** A manifest and service worker would make the app
-  installable and usable offline — genuinely low-cost here, since every
-  calculator's shaping math is already 100% client-side with no network
-  dependency at runtime (the opt-in yarn-colorway lookup is the one
-  exception, and would simply be unavailable offline).
 - **More accuracy fixtures.** `docs/ACCURACY.md` documents one real
   comparison per calculator's construction; more real patterns, especially
   ones matching the newer heel/raglan styles, would sharpen it further.
