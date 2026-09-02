@@ -1,20 +1,13 @@
 # Yarn Shaper
 
-A garment-shaping calculator, not a form-and-database CRUD app: it turns
-gauge and body measurements into the actual round-by-round stitch math a
-hand-knit sweater is built from, then renders that math live as an SVG
-schematic — no static mockup, no JS charting library, no backend. The
-shaping algorithms are C# compiled to WebAssembly and run entirely in the
-browser; a few browser APIs that C# genuinely can't reach on its own
-(localStorage, the clipboard, print) are called through minimal, targeted
-JS interop for the save/share/export features, and nowhere else.
+Yarn Shaper turns your gauge (stitches and rows per inch) and body
+measurements into a real, row-by-row shaping pattern — for a sweater
+yoke, a sock heel, or a granny square — and draws exactly what you'll
+end up making, live, as you type. No guessing what a schematic means:
+you see your actual project take shape before you cast on.
 
-The look is deliberately not another sleek SaaS dashboard: it leans into a
-whimsical grandma-craft-room aesthetic — stitched dashed borders, a
-gingham ribbon on the feature cards, a handwritten script accent, hard
-"stamped" button shadows instead of soft modern glow — closer to a
-cross-stitch sampler or a 1970s pattern book than a component library
-demo.
+It has a cozy, hand-crafted look — stitched borders, gingham accents, a
+handwritten script — instead of a typical sleek app interface.
 
 **Live demo:** [mollygilchrist03.github.io/YarnShaper](https://mollygilchrist03.github.io/YarnShaper/)
 
@@ -28,73 +21,43 @@ demo.
 
 ## What it does
 
-The home page doesn't wait for input to prove the concept: it renders a
-real raglan schedule from placeholder measurements the moment it loads,
-then cycles its colorway through four preset stripe sequences with a
-smooth color cross-fade — the shaping math and the colorway layer working
-together before you've typed anything.
+**Raglan sweater yokes.** Enter your gauge and body measurements and get
+a full shaping schedule — back, front, and both sleeves — drawn as a
+picture that grows exactly the way your yoke will. An ease field lets
+you dial in a closer or looser fit, and a toggle switches between
+top-down (shaping from the neck) and bottom-up (shaping from the
+underarm) construction.
 
-Enter a gauge (stitches/rows per inch) and a set of body measurements, and
-the raglan calculator produces a full round-by-round shaping schedule for
-a raglan yoke — back, front, and both sleeves — then draws each section as
-a schematic, cast-on stitches widening (or, worked bottom-up, narrowing)
-step by step toward the underarm split, exactly matching the computed
-stitch counts. An ease field controls how much room the finished garment
-gets beyond the body measurement — negative for a closer fit, positive for
-more room — and a construction toggle switches the whole schedule between
-top-down (increase from the neck) and bottom-up (decrease from the
-underarm) without changing any other input.
+**Sock heels, three ways.** Pick a classic flap-and-gusset heel, a
+short-row heel, or an afterthought heel from one dropdown, and the
+shaping schedule (and its picture) updates to match.
 
-A colorway picker sits alongside every calculator: build a stripe
-sequence (color + row count per stripe), and it's mapped onto the real row
-data — every section recolors in sync, since these constructions are
-worked in the round and row N is the same physical round in every section.
-Each stripe can also look up real yarn via the
-[Yarn Colorways API](https://temperature-blanket.com/api) two ways: find
-colorways near its current hex value, or search by yarn/brand name (e.g.
-"Malabrigo Rios") — optionally filtered to a specific yarn weight — and
-apply a real colorway's exact color to the stripe with one click. The
-estimated-yardage panel takes this further: "Find real yarn for this
-colorway" turns the already-computed yards-per-color into an actual
-shopping list, matching every color in the colorway to a real yarn at
-once. All of this is opt-in and requires deploying the small proxy in
-[`workers/yarn-colorway-proxy`](workers/yarn-colorway-proxy) (see below),
-so it's off by default rather than shipping a broken button.
+**Granny squares — or hexagons, or triangles.** Set how many corners
+your motif has, and the round-by-round stitch counts adjust to fit.
 
-The sock heel calculator supports three real, mechanically different
-heel techniques from one dropdown: the classic square flap with a
-short-row turn and a picked-up gusset; a short-row heel with no flap at
-all, whose active stitch count narrows to a center point and widens back
-out (rendered schematic, that narrowing and widening literally draws the
-heel's hourglass shape); and an afterthought heel, worked last from
-stitches picked up around a waste-yarn opening and decreased to a
-graftable point like a sock toe.
+**Preview your colors before you buy the yarn.** Build a stripe
+sequence and see it mapped onto the real construction, section by
+section, in sync. You can also look up real yarn: search by name or
+brand, filter by weight, or click a color and see which real yarn
+colorways are closest to it. Once you have a colorway you like, one
+click turns your estimated yardage into an actual shopping list —
+a suggested real yarn for every color. (This part talks to a small
+proxy service and is off by default in your own copy of the project;
+see [Tech stack](#tech-stack) below.)
 
-The granny square calculator generalizes past squares: a corner-count
-field controls how many clusters join every round, so the same
-round-by-round formula that makes a granny square work (4 clusters/round)
-produces a granny hexagon, triangle, or any other N-corner motif just by
-changing that one number.
+**Know how much yarn to buy.** The raglan and sock heel calculators
+estimate how many yards of each color your project will actually use.
 
-The raglan and sock heel pages also estimate yardage per color from the
-active colorway — how many yards of each stripe color the piece actually
-uses, not just how many rows it spans. Every schematic can be downloaded
-as a standalone SVG file straight from the card it's rendered on, and the
-whole results panel can be saved as a PDF via the browser's native
-print-to-PDF.
+**Save it, share it, come back later.** Save any project to your
+browser and reopen it from the **My Projects** page, or copy a
+shareable link that has the whole setup baked in — no account, and it
+works on any device.
 
-Every numeric input is validated — gauge, measurements, ease, corner
-count — with inline error messages, and the calculator simply doesn't run
-on invalid input rather than producing a schematic from nonsense numbers.
+**Export what you make.** Download any picture as an SVG file, or save
+the whole results page as a PDF.
 
-**Save, share, and pick back up later.** Any calculator's full setup
-(gauge, measurements, construction choice, colorway) can be saved to the
-browser's local storage under a name you choose, then reopened from a
-**My Projects** page that lists everything saved across all three
-calculators. The same setup can also be copied as a shareable link — the
-whole project is encoded into the URL itself, so opening that link on any
-device (or handing it to someone else) restores the exact setup with no
-account and no server involved.
+Every input is checked as you type, with a clear message if something's
+off, so you never end up looking at a schematic built from a typo.
 
 ## Accuracy
 
